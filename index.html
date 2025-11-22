@@ -5,7 +5,7 @@ cat << 'EOF' > index.html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (V10.3)</title>
+    <title>Shot List AI (4K Ready)</title>
     <style>
         /* === 核心設定 === */
         :root { --primary: #0A84FF; --accent: #32D74B; --bg: #000; --card: #1c1c1e; }
@@ -16,13 +16,12 @@ cat << 'EOF' > index.html
         
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
-        /* === 頁面 1: 設定 === */
+        /* === 頁面 1 & 2 (設定與預覽) === */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); }
         h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
         input, select { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
         .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
 
-        /* === 頁面 2: 預覽 === */
         #page-preview { display: none; flex: 1; flex-direction: column; background: #000; height: 100%; overflow: hidden; }
         .preview-header { flex-shrink: 0; background: #111; border-bottom: 1px solid #333; padding-top: env(safe-area-inset-top); }
         .nav-bar { display: flex; justify-content: space-between; padding: 15px 20px; }
@@ -30,18 +29,14 @@ cat << 'EOF' > index.html
         .tab-box { display: flex; background: #000; padding: 5px; margin: 0 20px 15px 20px; border-radius: 10px; border: 1px solid #333; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; color: #666; font-weight: bold; border-radius: 8px; font-size: 14px; transition: 0.2s; }
         .tab-btn.active { background: #333; color: #fff; }
-        
         .script-list { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
         .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
-        
         .tags { display: flex; gap: 10px; margin-bottom: 10px; }
         .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; }
         .tag-shot { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
         .tag-move { background: rgba(10,132,255,0.25); color: #64D2FF; border: 1px solid rgba(10,132,255,0.3); }
-        
         .s-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; color: #fff; }
         .s-desc { font-size: 16px; color: #aaa; line-height: 1.5; }
-        
         .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: var(--accent); color: #000; padding: 16px; border-radius: 30px; border: none; font-weight: bold; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(50,215,75,0.3); }
 
         /* === 頁面 3: AR 拍攝 === */
@@ -57,6 +52,7 @@ cat << 'EOF' > index.html
         .rec-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
         
+        /* AR 卡片 */
         .ar-card-container { position: absolute; bottom: 140px; left: 20px; right: 20px; z-index: 20; transition: opacity 0.3s; }
         .glass-card { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 15px; align-items: flex-start; }
         .ar-thumb { width: 80px; height: 80px; border-radius: 12px; background: #333; object-fit: cover; flex-shrink: 0; }
@@ -213,25 +209,30 @@ cat << 'EOF' > index.html
         async function confirmSelection() {
             currentList = document.getElementById('list-a').style.display==='block' ? dataA : dataB;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
+                // ★★★ 關鍵修改：請求 4K 高畫質 ★★★
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 4096 }, 
+                        height: { ideal: 2160 }
+                    }
+                });
                 document.getElementById('camera-feed').srcObject = stream;
                 document.getElementById('camera-feed').style.display = 'block';
                 setupRecorder(stream);
-            } catch(e) {}
+            } catch(e) { console.log("相機開啟失敗或不支援"); }
             
             document.getElementById('page-preview').style.display = 'none';
             document.getElementById('ui-layer').style.background = 'transparent';
             document.getElementById('page-ar').style.display = 'block';
             shotIdx = 0; 
-            
-            // 語音預熱
             speak("Standby.");
-            
             updateAR();
         }
 
         function setupRecorder(stream) {
-            let options = { mimeType: 'video/webm;codecs=vp9' };
+            let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 }; // 提高位元率
             if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
             try {
@@ -277,7 +278,6 @@ cat << 'EOF' > index.html
             document.getElementById('ar-thumb').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt)}?width=100&height=100&nologo=true`;
             document.getElementById('btn-prev').disabled = (shotIdx === 0);
 
-            // 恢復語音播放
             speak(`Action. Cut ${shotIdx + 1}`);
         }
 
