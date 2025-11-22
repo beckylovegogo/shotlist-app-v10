@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (V10)</title>
+    <title>Shot List AI (V10.1)</title>
     <style>
         /* === 核心設定 === */
         :root { --primary: #0A84FF; --accent: #32D74B; --bg: #000; --card: #1c1c1e; }
@@ -14,7 +14,7 @@
         
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
-        /* === 頁面 1 & 2 (保持 V9.1 的完美狀態) === */
+        /* === 頁面 1 & 2 (設定與預覽) === */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); }
         h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
         input, select { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
@@ -37,28 +37,19 @@
         .s-desc { font-size: 14px; color: #aaa; line-height: 1.5; }
         .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: var(--accent); color: #000; padding: 16px; border-radius: 30px; border: none; font-weight: bold; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(50,215,75,0.3); }
 
-        /* === 頁面 3: AR 拍攝 (V10 重點) === */
+        /* === 頁面 3: AR 拍攝 === */
         #page-ar { display: none; height: 100%; width: 100%; position: relative; padding: 20px; pointer-events: none; }
         #page-ar > * { pointer-events: auto; }
 
-        /* 左上角 HUD (垂直堆疊) */
-        .hud-container { 
-            position: absolute; top: 20px; left: 20px; 
-            display: flex; flex-direction: column; gap: 8px; /* 垂直間距 */
-            align-items: flex-start;
-            z-index: 20;
-        }
-        .hud-badge { 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); 
-            color: #fff; padding: 8px 16px; border-radius: 8px; 
-            font-size: 16px; /* 字體加大 */
-            font-weight: 800; letter-spacing: 0.5px;
-            border-left: 4px solid #fff; /* 左側裝飾線 */
-        }
-        .hud-blue { border-color: #0A84FF; color: #0A84FF; } /* 藍色高亮 */
+        /* 左上角 HUD */
+        .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; z-index: 20; }
+        .hud-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; border-left: 4px solid #fff; }
+        .hud-blue { border-color: #0A84FF; color: #0A84FF; }
 
-        /* 錄影計時 (居中) */
+        /* 錄影計時 */
         #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold;}
+        .rec-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
         
         /* AR 卡片 */
         .ar-card-container { position: absolute; bottom: 140px; left: 20px; right: 20px; z-index: 20; transition: opacity 0.3s; }
@@ -68,18 +59,22 @@
         .ar-desc { font-size: 15px; color: #ddd; line-height: 1.4; }
         .ar-move-tag { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block; }
 
-        /* 底部控制列 (新增上一鏡) */
+        /* 底部控制列 (更新：大顆文字按鈕) */
         .camera-controls { 
             position: absolute; bottom: 40px; left: 20px; right: 20px; 
             display: flex; justify-content: space-between; align-items: center; 
             z-index: 30; 
         }
-        .ctrl-btn { 
-            width: 50px; height: 50px; border-radius: 50%; 
-            background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
-            border: none; color: white; font-size: 24px; display: flex; justify-content: center; align-items: center;
+        
+        /* 新的文字按鈕樣式 */
+        .ctrl-btn-text { 
+            padding: 14px 20px; border-radius: 30px; 
+            background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);
+            border: none; color: white; font-size: 16px; font-weight: bold; 
+            display: flex; justify-content: center; align-items: center;
+            min-width: 90px;
         }
-        .ctrl-btn:disabled { opacity: 0.3; }
+        .ctrl-btn-text:disabled { opacity: 0.3; background: rgba(0,0,0,0.3); }
 
         .shutter-outer { width: 76px; height: 76px; border-radius: 50%; border: 4px solid white; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
@@ -135,25 +130,25 @@
             </div>
 
             <!-- 計時器 -->
-            <div id="rec-timer"><span id="timer-text">00:00</span></div>
+            <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
 
-            <!-- 卡片 -->
+            <!-- AR 卡片 -->
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
                     <img id="ar-thumb" class="ar-thumb">
                     <div style="flex:1">
-                        <span class="ar-move-tag" id="ar-move">PAN RIGHT</span>
+                        <span class="ar-move-tag" id="ar-move">平移</span>
                         <div class="ar-title" id="ar-title"></div>
                         <div class="ar-desc" id="ar-desc"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 底部控制 (新增上一鏡) -->
+            <!-- 底部控制 (文字按鈕) -->
             <div class="camera-controls">
-                <button class="ctrl-btn" id="btn-prev" onclick="prevShot()">↩︎</button>
+                <button class="ctrl-btn-text" id="btn-prev" onclick="prevShot()">❮ 上一鏡</button>
                 <div class="shutter-outer" id="shutter-btn" onclick="toggleRecord()"><div class="shutter-inner"></div></div>
-                <button class="ctrl-btn" id="btn-next" onclick="nextShot()">➡︎</button>
+                <button class="ctrl-btn-text" id="btn-next" onclick="nextShot()">下一鏡 ❯</button>
             </div>
         </div>
     </div>
@@ -170,8 +165,11 @@
 
             document.getElementById('overlay-loading').style.display = 'flex';
             
+            // Prompt: 強力禁止拼音 & 要求中文
             let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format}. 
-            Lang: Traditional Chinese. NO Pinyin.
+            Lang: Traditional Chinese (Taiwan). 
+            CRITICAL: NO Pinyin (e.g. "Pai she", "Jing tou" are FORBIDDEN). 
+            CRITICAL: Output ONLY Traditional Chinese characters.
             STRICT: shot_size & movement MUST be Chinese.
             Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
@@ -260,6 +258,7 @@
                 btn.classList.remove('recording'); timerUI.style.display = 'none';
                 document.getElementById('ar-card').style.opacity = '1';
                 clearInterval(timerInt);
+                document.getElementById('timer-text').innerText = "00:00";
             }
         }
 
