@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (V11)</title>
+    <title>Shot List AI (V11.1)</title>
     <style>
         /* === 核心設定 === */
         :root { --primary: #0A84FF; --accent: #32D74B; --bg: #000; --card: #1c1c1e; }
@@ -64,10 +64,11 @@
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
-        /* === Loading Overlay === */
+        /* Loading */
         #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .status-text { font-size: 14px; color: #888; margin-top: 10px; }
 
-        /* === 4. 殺青彈窗 (Wrap Modal) === */
+        /* Wrap Modal */
         #wrap-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .wrap-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 80%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -82,13 +83,12 @@
 <body>
     <video id="camera-feed" autoplay playsinline muted></video>
 
-    <!-- Loading -->
     <div id="overlay-loading">
         <div style="font-size:30px;margin-bottom:10px">🪄</div>
-        <div style="font-size:18px;font-weight:bold">AI 導演工作中...</div>
+        <div style="font-size:18px;font-weight:bold">AI 導演構思中...</div>
+        <div class="status-text" id="status-text">正在連接伺服器</div>
     </div>
 
-    <!-- Wrap Modal (殺青視窗) -->
     <div id="wrap-modal">
         <div class="wrap-card">
             <span class="wrap-icon">🎬</span>
@@ -161,6 +161,36 @@
         let dataA=[], dataB=[], currentList=[], shotIdx=0;
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
 
+        // ★★★ 新增：多模型輪詢機制 ★★★
+        async function fetchGemini(prompt) {
+            const models = [
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro"
+            ];
+
+            for (let model of models) {
+                try {
+                    document.getElementById('status-text').innerText = `正在嘗試 ${model}...`;
+                    console.log(`Trying ${model}...`);
+                    
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
+                        method: "POST", headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+                    });
+
+                    if (!res.ok) throw new Error(res.statusText);
+                    
+                    const json = await res.json();
+                    return json; // 成功就回傳
+                } catch (e) {
+                    console.warn(`${model} failed:`, e);
+                    // 繼續迴圈試下一個
+                }
+            }
+            throw new Error("所有線路皆繁忙，請稍後再試");
+        }
+
         async function generateScripts() {
             const topic = document.getElementById('topic').value;
             const format = document.getElementById('format').value;
@@ -176,16 +206,14 @@
 
             let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
             Count: STRICTLY ${shotCountStr} shots.
-            Lang: Traditional Chinese. NO Pinyin.
+            Lang: Traditional Chinese (Taiwan). NO Pinyin.
             STRICT: shot_size & movement MUST be Chinese.
             Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
-                    method: "POST", headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-                });
-                const json = await res.json();
+                // 使用新的輪詢函式
+                const json = await fetchGemini(prompt);
+                
                 const txt = json.candidates[0].content.parts[0].text.replace(/```json|```/g, "").trim();
                 const parsed = JSON.parse(txt);
                 dataA = parsed.planA; dataB = parsed.planB;
@@ -195,7 +223,10 @@
                 document.getElementById('page-setup').style.display = 'none';
                 document.getElementById('page-preview').style.display = 'flex';
                 switchTab('A');
-            } catch(e) { alert("生成失敗"); document.getElementById('overlay-loading').style.display = 'none'; }
+            } catch(e) { 
+                alert("生成失敗：" + e.message + "\n請檢查 API Key 或稍後再試。"); 
+                document.getElementById('overlay-loading').style.display = 'none'; 
+            }
         }
 
         function renderList(id, list) {
@@ -276,7 +307,6 @@
         }
 
         function updateAR() {
-            // ★★★ 殺青邏輯修改 ★★★
             if(shotIdx >= currentList.length) { 
                 document.getElementById('wrap-modal').style.display = 'flex';
                 speak("It's a wrap!");
