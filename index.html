@@ -2,28 +2,15 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (V12 Zoom)</title>
+    <!-- 強制禁止縮放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shot List AI (V12.1)</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
-        
-        /* 禁止所有預設縮放行為 */
-        body { 
-            margin: 0; padding: 0; background: var(--bg); color: #fff; 
-            font-family: -apple-system, sans-serif; 
-            height: 100dvh; width: 100vw; overflow: hidden; 
-            touch-action: none; /* 關鍵：禁止手勢縮放 */
-        }
+        body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* 相機層：增加 transform-origin 讓數位變焦從中心放大 */
-        video#camera-feed { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: cover; z-index: 1; display: none; 
-            transform-origin: center center; 
-            transition: transform 0.1s ease-out; /* 平滑變焦 */
-        }
-        
+        video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; transform-origin: center center; transition: transform 0.1s ease-out; }
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
         /* Setup */
@@ -42,10 +29,13 @@
         .tab-btn.active { background: #333; color: #fff; border-color: #555; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .script-list { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
         .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
+        
+        /* 標籤樣式 (維持 V11.6 樣式) */
         .tags { display: flex; gap: 10px; margin-bottom: 10px; }
         .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; letter-spacing: 0.5px; }
-        .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; border: none; }
+        .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; border: none; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
         .tag-move { background: rgba(10,132,255,0.25); color: #64D2FF; border: 1px solid rgba(10,132,255,0.3); }
+        
         .s-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; color: #fff; }
         .s-desc { font-size: 16px; color: #aaa; line-height: 1.5; }
         .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: #FFFFFF; color: #000000; padding: 18px; border-radius: 30px; border: none; font-weight: 800; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(255,255,255,0.2); cursor: pointer; }
@@ -72,33 +62,12 @@
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
-        /* ★★★ 變焦滑桿 UI (Zoom Slider) ★★★ */
-        .zoom-container {
-            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-            height: 200px; width: 40px; z-index: 30;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        input[type=range][orient=vertical] {
-            writing-mode: bt-lr; /* IE/Edge */
-            -webkit-appearance: slider-vertical; /* Webkit */
-            width: 8px; height: 100%; padding: 0 5px;
-            background: rgba(255,255,255,0.2); border-radius: 5px;
-        }
-        /* 自定義 Slider 樣式 (跨瀏覽器有點麻煩，用簡單的 transform 旋轉比較穩) */
-        .slider-wrapper {
-            transform: rotate(-90deg); width: 200px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #zoom-slider {
-            width: 100%; -webkit-appearance: none; background: transparent;
-        }
-        #zoom-slider::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px;
-        }
-        #zoom-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
-            background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-top: -10px;
-        }
+        /* Zoom Slider */
+        .zoom-container { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); height: 200px; width: 40px; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .slider-wrapper { transform: rotate(-90deg); width: 200px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        #zoom-slider { width: 100%; -webkit-appearance: none; background: transparent; }
+        #zoom-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+        #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-top: -10px; }
         .zoom-label { color: white; font-size: 12px; font-weight: bold; margin-top: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
         #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
@@ -167,15 +136,12 @@
                 <div class="hud-badge hud-blue" id="ar-shot-type">特寫</div>
             </div>
             <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
-            
-            <!-- 變焦滑桿 -->
             <div class="zoom-container">
                 <div class="slider-wrapper">
                     <input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1" oninput="handleZoom(this.value)">
                 </div>
                 <div class="zoom-label">1x</div>
             </div>
-
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
                     <img id="ar-thumb" class="ar-thumb">
@@ -195,6 +161,11 @@
     </div>
 
     <script>
+        // 暴力禁止縮放
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+        document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+        document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+        
         const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY"; 
         let dataA=[], dataB=[], currentList=[], shotIdx=0;
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
@@ -227,10 +198,15 @@
             let shotCountStr = format==="Shorts"?"6 to 8": format==="Vlog"?"at least 15":"10 to 12";
             let styleDesc = format==="Shorts"?"Fast-paced": format==="Vlog"?"Storytelling":"Cinematic";
 
-            let prompt = `Role: Professional DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
+            // ★★★ 手機專用運鏡白名單 ★★★
+            let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
             Count: STRICTLY ${shotCountStr} shots.
             Lang: Traditional Chinese (Taiwan). NO Pinyin.
-            STRICT: shot_size & movement MUST be Chinese.
+            
+            STRICT VOCABULARY (MOBILE ONLY):
+            - Movement: 固定, 平移, 推進, 拉遠, 跟隨, 環繞. (Forbidden: 航拍, 肩扛, 搖攝)
+            - Shot Size: 特寫, 中景, 廣角, 微距. (Forbidden: 大遠景, 極特寫)
+
             Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
             try {
@@ -298,16 +274,9 @@
 
         function handleZoom(val) {
             document.querySelector('.zoom-label').innerText = val + 'x';
-            
-            // 嘗試硬體變焦
             if (videoTrack && capabilities.zoom) {
-                try {
-                    videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
-                    return; // 成功就結束
-                } catch(e) {}
+                try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); return; } catch(e) {}
             }
-            
-            // 降級：數位變焦 (Scale Video)
             document.getElementById('camera-feed').style.transform = `scale(${val})`;
         }
 
