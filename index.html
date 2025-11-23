@@ -2,15 +2,15 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 強制禁止縮放 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shot List AI (V12.1)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Shot List AI (Pure)</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; transform-origin: center center; transition: transform 0.1s ease-out; }
+        /* Camera */
+        video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; }
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
         /* Setup */
@@ -30,7 +30,7 @@
         .script-list { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
         .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
         
-        /* 標籤樣式 (維持 V11.6 樣式) */
+        /* Tags */
         .tags { display: flex; gap: 10px; margin-bottom: 10px; }
         .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; letter-spacing: 0.5px; }
         .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; border: none; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
@@ -46,29 +46,24 @@
         .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; z-index: 20; }
         .hud-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; border-left: 4px solid #fff; }
         .hud-blue { border-color: #0A84FF; color: #0A84FF; }
+        
         #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold;}
         .rec-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
+        
         .ar-card-container { position: absolute; bottom: 140px; left: 20px; right: 20px; z-index: 20; transition: opacity 0.3s; }
         .glass-card { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 15px; align-items: flex-start; }
         .ar-thumb { width: 80px; height: 80px; border-radius: 12px; background: #333; object-fit: cover; flex-shrink: 0; }
         .ar-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2; }
         .ar-desc { font-size: 15px; color: #ddd; line-height: 1.4; }
         .ar-move-tag { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block; }
+        
         .camera-controls { position: absolute; bottom: 40px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
         .ctrl-btn-text { padding: 14px 22px; border-radius: 30px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; min-width: 90px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; }
         .ctrl-btn-text:disabled { opacity: 0.3; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); }
         .shutter-outer { width: 76px; height: 76px; border-radius: 50%; border: 4px solid white; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
-
-        /* Zoom Slider */
-        .zoom-container { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); height: 200px; width: 40px; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .slider-wrapper { transform: rotate(-90deg); width: 200px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        #zoom-slider { width: 100%; -webkit-appearance: none; background: transparent; }
-        #zoom-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
-        #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-top: -10px; }
-        .zoom-label { color: white; font-size: 12px; font-weight: bold; margin-top: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
         #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .status-text { font-size: 14px; color: #888; margin-top: 10px; }
@@ -136,12 +131,9 @@
                 <div class="hud-badge hud-blue" id="ar-shot-type">特寫</div>
             </div>
             <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
-            <div class="zoom-container">
-                <div class="slider-wrapper">
-                    <input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1" oninput="handleZoom(this.value)">
-                </div>
-                <div class="zoom-label">1x</div>
-            </div>
+            
+            <!-- 變焦滑桿已移除 -->
+
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
                     <img id="ar-thumb" class="ar-thumb">
@@ -161,16 +153,12 @@
     </div>
 
     <script>
-        // 暴力禁止縮放
+        // 禁止縮放
         document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-        document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
-        document.addEventListener('gestureend', function(e) { e.preventDefault(); });
         
         const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY"; 
         let dataA=[], dataB=[], currentList=[], shotIdx=0;
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
-        let videoTrack = null;
-        let capabilities = {};
 
         async function fetchGemini(prompt) {
             const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
@@ -198,14 +186,14 @@
             let shotCountStr = format==="Shorts"?"6 to 8": format==="Vlog"?"at least 15":"10 to 12";
             let styleDesc = format==="Shorts"?"Fast-paced": format==="Vlog"?"Storytelling":"Cinematic";
 
-            // ★★★ 手機專用運鏡白名單 ★★★
+            // Prompt
             let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
             Count: STRICTLY ${shotCountStr} shots.
             Lang: Traditional Chinese (Taiwan). NO Pinyin.
             
             STRICT VOCABULARY (MOBILE ONLY):
             - Movement: 固定, 平移, 推進, 拉遠, 跟隨, 環繞. (Forbidden: 航拍, 肩扛, 搖攝)
-            - Shot Size: 特寫, 中景, 廣角, 微距. (Forbidden: 大遠景, 極特寫)
+            - Shot Size: 特寫, 中景, 廣角, 微距.
 
             Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
@@ -254,13 +242,8 @@
                     audio: true,
                     video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }
                 });
-                const video = document.getElementById('camera-feed');
-                video.srcObject = stream;
-                video.style.display = 'block';
-                
-                videoTrack = stream.getVideoTracks()[0];
-                capabilities = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-                
+                document.getElementById('camera-feed').srcObject = stream;
+                document.getElementById('camera-feed').style.display = 'block';
                 setupRecorder(stream);
             } catch(e) { console.log("相機異常"); }
             
@@ -270,14 +253,6 @@
             shotIdx = 0; 
             speak("Standby.");
             updateAR();
-        }
-
-        function handleZoom(val) {
-            document.querySelector('.zoom-label').innerText = val + 'x';
-            if (videoTrack && capabilities.zoom) {
-                try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); return; } catch(e) {}
-            }
-            document.getElementById('camera-feed').style.transform = `scale(${val})`;
         }
 
         function setupRecorder(stream) {
