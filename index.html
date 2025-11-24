@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (Pure)</title>
+    <title>Shot List AI (Enhanced)</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
@@ -16,8 +16,16 @@
         /* Setup */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); }
         h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
-        input, select { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
+        
+        /* 新增：模式切換標籤 */
+        .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-tab { flex: 1; padding: 12px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .mode-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        input, select, textarea { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
+        textarea { min-height: 200px; font-family: monospace; resize: vertical; line-height: 1.6; }
         .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .hint-text { margin-top: 15px; font-size: 13px; color: #888; line-height: 1.6; }
 
         /* Preview */
         #page-preview { display: none; flex: 1; flex-direction: column; background: #000; height: 100%; overflow: hidden; }
@@ -100,47 +108,93 @@
     <div id="ui-layer">
         <div id="page-setup">
             <h1>SHOT LIST AI</h1>
-            <input type="text" id="topic" placeholder="輸入主題 (例: 拍一杯咖啡)">
-            <select id="format">
-                <option value="Shorts">📱 短影音 (Reels)</option>
-                <option value="Vlog">📹 YouTube 長片</option>
-                <option value="Cinematic">🎬 電影感 B-Roll</option>
-            </select>
-            <button class="btn-main" onclick="generateScripts()">開始生成</button>
+            
+            <!-- 新增：模式切換 -->
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="switchMode('generate')" id="tab-generate">
+                    🤖 AI 生成
+                </button>
+                <button class="mode-tab" onclick="switchMode('import')" id="tab-import">
+                    📄 導入腳本
+                </button>
+            </div>
+            
+            <!-- AI 生成模式 -->
+            <div id="mode-generate">
+                <input type="text" id="topic" placeholder="輸入主題 (例: 拍一杯咖啡)">
+                <select id="format">
+                    <option value="Shorts">📱 短影音 (Reels)</option>
+                    <option value="Vlog">📹 YouTube 長片</option>
+                    <option value="Cinematic">🎬 電影感 B-Roll</option>
+                </select>
+                <button class="btn-main" onclick="generateScripts()">AI 生成腳本</button>
+            </div>
+            
+            <!-- 新增：導入腳本模式 -->
+            <div id="mode-import" style="display: none;">
+                <textarea 
+                    id="script-input" 
+                    placeholder="貼上你的腳本內容，例如：
+
+Scene 1 - 室外咖啡店 - 白天
+特寫：咖啡杯冒出蒸氣
+運鏡：固定機位
+
+Scene 2 - 吧台
+中景：咖啡師製作拉花
+運鏡：由左至右平移
+
+或直接列出鏡頭：
+特寫咖啡杯，蒸氣上升
+中景咖啡師拉花
+廣角店內全景"
+                ></textarea>
+                
+                <button class="btn-main" onclick="parseImportedScript()">
+                    解析腳本並開始拍攝
+                </button>
+                
+                <div class="hint-text">
+                    💡 支援格式：<br>
+                    • 每個場景用 "Scene X" 開頭<br>
+                    • 或直接列出鏡頭描述（每行一個）<br>
+                    • 系統會自動識別鏡頭類型和運鏡
+                </div>
+            </div>
         </div>
 
         <div id="page-preview">
             <div class="preview-header">
                 <div class="nav-bar">
                     <button class="nav-btn" onclick="goBack()">❮ 修改主題</button>
-                    <button class="nav-btn" onclick="generateScripts()">🔄 重新生成</button>
+                    <button class="nav-btn" onclick="confirmSelection()">確認拍攝</button>
                 </div>
                 <div class="tab-box">
-                    <div class="tab-btn active" id="tab-a" onclick="switchTab('A')">方案 A</div>
-                    <div class="tab-btn" id="tab-b" onclick="switchTab('B')">方案 B</div>
+                    <button class="tab-btn active" id="tab-a" onclick="switchTab('A')">方案 A</button>
+                    <button class="tab-btn" id="tab-b" onclick="switchTab('B')">方案 B</button>
                 </div>
             </div>
             <div class="script-list" id="list-a"></div>
-            <div class="script-list" id="list-b" style="display:none;"></div>
-            <button class="fab-start" onclick="confirmSelection()">🎥 開始拍攝</button>
+            <div class="script-list" id="list-b" style="display:none"></div>
+            <button class="fab-start" onclick="confirmSelection()">✓ 確認並開始拍攝</button>
         </div>
 
         <div id="page-ar">
             <div class="hud-container">
-                <div class="hud-badge" id="ar-idx">1/5</div>
+                <div class="hud-badge" id="ar-idx">1/6</div>
                 <div class="hud-badge hud-blue" id="ar-shot-type">特寫</div>
             </div>
-            <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
-            
-            <!-- 變焦滑桿已移除 -->
-
+            <div id="rec-timer">
+                <div class="rec-dot"></div>
+                <span id="timer-text">00:00</span>
+            </div>
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
-                    <img id="ar-thumb" class="ar-thumb">
+                    <img id="ar-thumb" class="ar-thumb" src="" alt="">
                     <div style="flex:1">
-                        <span class="ar-move-tag" id="ar-move">平移</span>
-                        <div class="ar-title" id="ar-title"></div>
-                        <div class="ar-desc" id="ar-desc"></div>
+                        <span class="ar-move-tag" id="ar-move">固定鏡頭</span>
+                        <div class="ar-title" id="ar-title">咖啡蒸氣</div>
+                        <div class="ar-desc" id="ar-desc">特寫咖啡杯...</div>
                     </div>
                 </div>
             </div>
@@ -159,6 +213,83 @@
         const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY"; 
         let dataA=[], dataB=[], currentList=[], shotIdx=0;
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
+
+        // ========== 新增：模式切換 ==========
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${mode}`).classList.add('active');
+            
+            if (mode === 'generate') {
+                document.getElementById('mode-generate').style.display = 'block';
+                document.getElementById('mode-import').style.display = 'none';
+            } else {
+                document.getElementById('mode-generate').style.display = 'none';
+                document.getElementById('mode-import').style.display = 'block';
+            }
+        }
+
+        // ========== 改進：更好的 Gemini Prompt ==========
+        function buildImprovedPrompt(topic, format) {
+            const formatGuides = {
+                "Shorts": {
+                    count: "6-8",
+                    style: "快節奏、視覺衝擊、適合直式",
+                    movements: "快速平移、跟拍、推進",
+                    tips: "每鏡2-5秒，強調視覺變化"
+                },
+                "Vlog": {
+                    count: "12-15",
+                    style: "自然、親切、故事性",
+                    movements: "手持跟拍、固定、緩慢平移",
+                    tips: "建立連結，展現真實"
+                },
+                "Cinematic": {
+                    count: "8-12",
+                    style: "電影感、情緒氛圍",
+                    movements: "推進、環繞、靜態長鏡頭",
+                    tips: "強調光影、構圖、情緒"
+                }
+            };
+
+            const guide = formatGuides[format];
+            
+            return `你是專業電影攝影指導。為「${topic}」設計兩套拍攝腳本。
+
+格式：${format}
+風格：${guide.style}
+鏡頭數：嚴格 ${guide.count} 個
+運鏡選項：${guide.movements}
+
+每個鏡頭包含：
+{
+  "shot_size": "特寫/近景/中景/全景/遠景",
+  "movement": "${guide.movements}中選一個",
+  "title": "鏡頭標題（15字內）",
+  "visual": "詳細畫面描述（至少50字）：
+    - 主體動作和表情
+    - 光線和色調（如：溫暖側光、冷調頂光）
+    - 構圖方式（如：三分法、中心構圖）
+    - 情緒氛圍（如：寧靜、緊張）
+    - 背景環境細節",
+  "duration": "建議時長（如：3秒、5-8秒）",
+  "audio_note": "聲音建議",
+  "img_prompt": "英文圖像提示詞"
+}
+
+要求：
+1. planA（經典方案）：傳統、穩定、適合新手
+2. planB（創意方案）：大膽、獨特、藝術感
+3. visual 描述至少50字，包含光線、色彩、構圖
+4. 運鏡要具體（如：「由左至右緩慢平移，3秒內完成」）
+5. 手機拍攝限制：禁止航拍、肩扛、專業軌道
+
+使用繁體中文（台灣）。
+輸出嚴格 JSON 格式：
+{
+  "planA": [...],
+  "planB": [...]
+}`;
+        }
 
         async function fetchGemini(prompt) {
             const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
@@ -183,19 +314,8 @@
 
             document.getElementById('overlay-loading').style.display = 'flex';
             
-            let shotCountStr = format==="Shorts"?"6 to 8": format==="Vlog"?"at least 15":"10 to 12";
-            let styleDesc = format==="Shorts"?"Fast-paced": format==="Vlog"?"Storytelling":"Cinematic";
-
-            // Prompt
-            let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
-            Count: STRICTLY ${shotCountStr} shots.
-            Lang: Traditional Chinese (Taiwan). NO Pinyin.
-            
-            STRICT VOCABULARY (MOBILE ONLY):
-            - Movement: 固定, 平移, 推進, 拉遠, 跟隨, 環繞. (Forbidden: 航拍, 肩扛, 搖攝)
-            - Shot Size: 特寫, 中景, 廣角, 微距.
-
-            Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
+            // 使用改進的 prompt
+            const prompt = buildImprovedPrompt(topic, format);
 
             try {
                 const json = await fetchGemini(prompt);
@@ -207,11 +327,154 @@
                 document.getElementById('overlay-loading').style.display = 'none';
                 document.getElementById('page-setup').style.display = 'none';
                 document.getElementById('page-preview').style.display = 'flex';
+                
+                // 顯示兩個方案標籤
+                document.getElementById('tab-b').style.display = 'block';
                 switchTab('A');
             } catch(e) { 
                 alert("生成失敗：" + e.message); 
                 document.getElementById('overlay-loading').style.display = 'none'; 
             }
+        }
+
+        // ========== 新增：導入腳本功能 ==========
+        function parseImportedScript() {
+            const input = document.getElementById('script-input').value.trim();
+            
+            if (!input) {
+                alert('請貼上腳本內容');
+                return;
+            }
+            
+            try {
+                const parsed = parseScriptText(input);
+                
+                if (parsed.length === 0) {
+                    alert('無法解析腳本，請檢查格式');
+                    return;
+                }
+                
+                dataA = parsed;
+                dataB = [];
+                
+                renderList('list-a', dataA);
+                document.getElementById('list-b').innerHTML = '<div style="text-align:center; padding:40px; color:#666;">導入模式僅有一套腳本</div>';
+                
+                document.getElementById('page-setup').style.display = 'none';
+                document.getElementById('page-preview').style.display = 'flex';
+                
+                // 隱藏 B 方案標籤
+                document.getElementById('tab-b').style.display = 'none';
+                switchTab('A');
+                
+                console.log('✅ 成功導入', parsed.length, '個鏡頭');
+                
+            } catch (e) {
+                alert('解析腳本時發生錯誤：' + e.message);
+                console.error(e);
+            }
+        }
+
+        function parseScriptText(text) {
+            const shots = [];
+            const scenePattern = /Scene\s+\d+[^\n]*/gi;
+            const sceneMatches = text.match(scenePattern);
+            
+            if (sceneMatches && sceneMatches.length > 0) {
+                const sceneSections = text.split(scenePattern).filter(s => s.trim());
+                sceneMatches.forEach((sceneHeader, idx) => {
+                    const content = sceneSections[idx] || '';
+                    const lines = content.split('\n').map(l => l.trim()).filter(l => l);
+                    if (lines.length > 0) {
+                        shots.push(parseSceneContent(sceneHeader, lines, idx + 1));
+                    }
+                });
+            } else {
+                const lines = text.split('\n')
+                    .map(l => l.trim())
+                    .filter(l => l && !l.startsWith('//') && !l.startsWith('#'));
+                
+                lines.forEach((line, idx) => {
+                    if (line.length > 5) {
+                        shots.push(parseSingleLine(line, idx + 1));
+                    }
+                });
+            }
+            
+            return shots;
+        }
+
+        function parseSceneContent(header, lines, index) {
+            const shotTypes = ['特寫', '近景', '中景', '全景', '遠景', '大遠景'];
+            const movements = ['固定', '平移', '推進', '拉遠', '搖鏡', '跟拍', '環繞', '升降'];
+            
+            let shotSize = '中景';
+            let movement = '固定';
+            let title = header;
+            let visual = lines.join('。');
+            
+            for (const type of shotTypes) {
+                if (visual.includes(type)) {
+                    shotSize = type;
+                    break;
+                }
+            }
+            
+            for (const move of movements) {
+                if (visual.includes(move)) {
+                    movement = move;
+                    break;
+                }
+            }
+            
+            if (lines[0] && lines[0].length < 30) {
+                title = lines[0];
+                visual = lines.slice(1).join('。');
+            }
+            
+            return {
+                shot_size: shotSize,
+                movement: movement,
+                title: title || `鏡頭 ${index}`,
+                visual: visual || '畫面描述',
+                duration: '5秒',
+                audio_note: '現場收音',
+                img_prompt: `cinematic shot, ${title}, professional filmmaking`
+            };
+        }
+
+        function parseSingleLine(line, index) {
+            const shotTypes = ['特寫', '近景', '中景', '全景', '遠景'];
+            const movements = ['固定', '平移', '推進', '拉遠', '搖鏡', '跟拍', '環繞'];
+            
+            let shotSize = '中景';
+            let movement = '固定';
+            
+            for (const type of shotTypes) {
+                if (line.includes(type)) {
+                    shotSize = type;
+                    break;
+                }
+            }
+            
+            for (const move of movements) {
+                if (line.includes(move)) {
+                    movement = move;
+                    break;
+                }
+            }
+            
+            const title = line.substring(0, 20) + (line.length > 20 ? '...' : '');
+            
+            return {
+                shot_size: shotSize,
+                movement: movement,
+                title: title,
+                visual: line,
+                duration: '5秒',
+                audio_note: '現場收音',
+                img_prompt: `cinematic shot, professional filmmaking`
+            };
         }
 
         function renderList(id, list) {
