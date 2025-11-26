@@ -81,7 +81,16 @@
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
         /* Modals */
-        #overlay-loading, #wrap-modal, #ios-modal, #limit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        #overlay-loading, #wrap-modal, #ios-modal, #limit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); flex-direction: column; }
+        
+        /* Loading Animation */
+        .loading-wand { font-size: 80px; margin-bottom: 30px; animation: wandShine 1.5s ease-in-out infinite; filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)); }
+        @keyframes wandShine {
+            0%, 100% { transform: rotate(-10deg) scale(1); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4)); }
+            50% { transform: rotate(10deg) scale(1.1); filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) drop-shadow(0 0 60px rgba(255, 255, 255, 0.8)); }
+        }
+        .loading-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+        
         .modal-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 85%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s; }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-icon { font-size: 60px; margin-bottom: 20px; }
@@ -90,7 +99,6 @@
         .modal-text.left { text-align: left; }
         .btn-modal { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-secondary { background: #333; }
-        .status-text { font-size: 14px; color: #888; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -98,9 +106,8 @@
 
     <!-- Loading -->
     <div id="overlay-loading">
-        <div style="font-size:30px;margin-bottom:10px">🪄</div>
-        <div style="font-size:18px;font-weight:bold" id="loading-title">Loading...</div>
-        <div class="status-text" id="status-text">Connecting...</div>
+        <div class="loading-wand">🪄</div>
+        <div class="loading-title" id="loading-title">Loading...</div>
     </div>
 
     <!-- Wrap Modal -->
@@ -242,7 +249,6 @@
                 tabA: "方案 A",
                 tabB: "方案 B",
                 loadingTitle: "AI 導演構思中...",
-                statusText: "正在連接伺服器",
                 wrapTitle: "IT'S A WRAP!",
                 wrapText: "恭喜殺青！<br>所有鏡頭已拍攝完成",
                 btnDownload: "下載全部影片",
@@ -280,7 +286,6 @@
                 tabA: "Plan A",
                 tabB: "Plan B",
                 loadingTitle: "AI Director Thinking...",
-                statusText: "Connecting to server...",
                 wrapTitle: "IT'S A WRAP!",
                 wrapText: "Great job!<br>All shots completed.",
                 btnDownload: "Download All Videos",
@@ -398,7 +403,6 @@
             
             // Modals
             document.getElementById('loading-title').innerHTML = t.loadingTitle;
-            document.getElementById('status-text').innerHTML = t.statusText;
             document.getElementById('wrap-title').innerHTML = t.wrapTitle;
             document.getElementById('wrap-text').innerHTML = t.wrapText;
             document.getElementById('btn-download').innerHTML = t.btnDownload;
@@ -448,11 +452,9 @@
         // Fetch from Gemini API
         async function fetchGemini(prompt) {
             const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
-            const t = T[currentLang];
             
             for (let model of models) {
                 try {
-                    document.getElementById('status-text').innerText = `${t.statusText} (${model})`;
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
