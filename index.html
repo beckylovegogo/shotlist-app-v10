@@ -3,23 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI</title>
+    <title>Shot List AI (Fixed UI)</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* Camera */
         video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; }
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
         /* Setup */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
         
-        /* Lang Switch */
-        .lang-select { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 20px; font-size: 14px; outline: none; cursor: pointer; }
+        /* Lang Button (Fixed Position) */
+        .lang-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 20; }
+        .lang-menu { position: absolute; top: 70px; left: 20px; background: #333; border-radius: 12px; overflow: hidden; display: none; z-index: 21; border: 1px solid #444; }
+        .lang-opt { padding: 12px 20px; color: white; border-bottom: 1px solid #444; cursor: pointer; font-size: 14px; }
+        .lang-opt:last-child { border-bottom: none; }
+        .lang-opt:active { background: var(--primary); }
 
-        h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
+        /* Title (Fixed Visibility) */
+        h1 { 
+            font-size: 42px; font-weight: 900; text-align: center; 
+            color: #FFFFFF; /* 純白 */
+            text-shadow: 0 0 20px rgba(10, 132, 255, 0.5); /* 藍色光暈 */
+            margin-bottom: 40px; letter-spacing: 1px;
+        }
         
         .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-tab { flex: 1; padding: 12px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -75,10 +84,10 @@
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
+        /* Modals */
         #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .status-text { font-size: 14px; color: #888; margin-top: 10px; }
         
-        /* Modals */
         #wrap-modal, #ios-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .wrap-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 85%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s; }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -99,7 +108,6 @@
         <div class="status-text" id="status-text">正在連接伺服器</div>
     </div>
 
-    <!-- Wrap Modal -->
     <div id="wrap-modal">
         <div class="wrap-card">
             <span class="wrap-icon">🎬</span>
@@ -109,11 +117,10 @@
         </div>
     </div>
 
-    <!-- iOS Save Guide Modal -->
     <div id="ios-modal">
         <div class="wrap-card">
-            <div class="wrap-title">📲 影片已生成</div>
-            <div class="wrap-text">
+            <div class="wrap-title" id="ios-title">📲 影片已生成</div>
+            <div class="wrap-text" id="ios-text">
                 iOS Safari 限制無法直接存入相簿。<br><br>
                 <b>請依照以下步驟：</b><br>
                 1. 點擊「下載」<br>
@@ -121,17 +128,19 @@
                 3. 選擇 <b>"下載項目"</b><br>
                 4. 點擊影片 -> 左下角 <b>"分享"</b> -> <b>"儲存影片"</b>
             </div>
-            <button class="btn-ok" onclick="document.getElementById('ios-modal').style.display='none'">知道了</button>
+            <button class="btn-ok" onclick="document.getElementById('ios-modal').style.display='none'" id="btn-ios-ok">知道了</button>
         </div>
     </div>
 
     <div id="ui-layer">
         <div id="page-setup">
-            <select class="lang-select" onchange="changeLanguage(this.value)">
-                <option value="zh-TW">🇹🇼 繁體中文</option>
-                <option value="en-US">🇺🇸 English</option>
-            </select>
-            
+            <!-- Lang Button -->
+            <div class="lang-btn" onclick="toggleLang()">🌐</div>
+            <div class="lang-menu" id="lang-menu">
+                <div class="lang-opt" onclick="changeLanguage('zh-TW')">🇹🇼 繁體中文</div>
+                <div class="lang-opt" onclick="changeLanguage('en-US')">🇺🇸 English</div>
+            </div>
+
             <h1>SHOT LIST AI</h1>
             
             <div class="mode-tabs">
@@ -150,8 +159,8 @@
             </div>
             
             <div id="mode-import" style="display: none;">
-                <textarea id="script-input" placeholder="貼上腳本..."></textarea>
-                <div class="hint-text" id="hint-import">💡 支援文字貼上，自動解析</div>
+                <textarea id="script-input" placeholder="請貼上腳本，每行一個鏡頭..."></textarea>
+                <div class="hint-text" id="hint-import">💡 每行一個鏡頭，系統自動分析</div>
                 <br>
                 <button class="btn-main" onclick="parseImportedScript()" id="btn-parse">解析並開始</button>
             </div>
@@ -204,10 +213,10 @@
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
         let currentLang = 'zh-TW';
 
-        // I18N
         const I18N = {
             "zh-TW": {
                 "placeholder": "輸入主題 (例: 拍一杯咖啡)",
+                "input_placeholder": "請貼上腳本，每行一個鏡頭...",
                 "tab_gen": "🤖 AI 生成", "tab_imp": "📄 導入腳本",
                 "btn_gen": "開始生成", "btn_parse": "解析並開始",
                 "hint_imp": "💡 每行一個鏡頭，系統自動分析",
@@ -217,10 +226,14 @@
                 "wrap_text": "恭喜殺青！<br>所有鏡頭已拍攝完成", "btn_home": "回到首頁",
                 "prompt_lang": "Traditional Chinese (Taiwan)",
                 "voc_shot": "特寫, 中景, 廣角, 微距",
-                "voc_move": "固定, 平移, 推進, 拉遠, 跟隨, 環繞"
+                "voc_move": "固定, 平移, 推進, 拉遠, 跟隨, 環繞",
+                "ios_title": "📲 影片已生成",
+                "ios_text": "iOS Safari 限制無法直接存入相簿。<br><br><b>請依照以下步驟：</b><br>1. 點擊「下載」<br>2. 點擊網址列左側 <b>\"大小(Aa)\"</b><br>3. 選擇 <b>\"下載項目\"</b><br>4. 點擊影片 -> 左下角 <b>\"分享\"</b> -> <b>\"儲存影片\"</b>",
+                "btn_ok": "知道了"
             },
             "en-US": {
                 "placeholder": "Enter topic (e.g. Making Coffee)",
+                "input_placeholder": "Paste script here, one shot per line...",
                 "tab_gen": "🤖 AI Generate", "tab_imp": "📄 Import",
                 "btn_gen": "Generate", "btn_parse": "Parse & Start",
                 "hint_imp": "💡 One shot per line",
@@ -230,14 +243,25 @@
                 "wrap_text": "Great job!<br>All shots completed.", "btn_home": "Home",
                 "prompt_lang": "English",
                 "voc_shot": "Close-up, Medium Shot, Wide Shot, Macro",
-                "voc_move": "Static, Pan, Push In, Pull Out, Follow, Orbit"
+                "voc_move": "Static, Pan, Push In, Pull Out, Follow, Orbit",
+                "ios_title": "📲 Video Ready",
+                "ios_text": "iOS Safari requires manual saving.<br><br><b>Steps:</b><br>1. Tap 'Download'<br>2. Tap <b>'Aa'</b> icon in URL bar<br>3. Select <b>'Downloads'</b><br>4. Tap video -> <b>'Share'</b> -> <b>'Save Video'</b>",
+                "btn_ok": "Got it"
             }
         };
 
+        function toggleLang() {
+            const menu = document.getElementById('lang-menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
         function changeLanguage(lang) {
             currentLang = lang;
+            document.getElementById('lang-menu').style.display = 'none';
+            
             const t = I18N[lang];
             document.getElementById('topic').placeholder = t.placeholder;
+            document.getElementById('script-input').placeholder = t.input_placeholder;
             document.getElementById('tab-generate').innerText = t.tab_gen;
             document.getElementById('tab-import').innerText = t.tab_imp;
             document.getElementById('btn-generate').innerText = t.btn_gen;
@@ -252,6 +276,9 @@
             document.getElementById('wrap-title').innerText = t.wrap_title;
             document.getElementById('wrap-text').innerHTML = t.wrap_text;
             document.getElementById('btn-home').innerText = t.btn_home;
+            document.getElementById('ios-title').innerText = t.ios_title;
+            document.getElementById('ios-text').innerHTML = t.ios_text;
+            document.getElementById('btn-ios-ok').innerText = t.btn_ok;
         }
 
         // Mode Switch
@@ -382,17 +409,15 @@
                     const blob = new Blob(recordedChunks, { type: "video/webm" });
                     recordedChunks = [];
                     
-                    // iOS Save Guide Logic
+                    // iOS Save Guide
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                     if (isIOS) {
-                        // Show custom iOS guide
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}.webm`;
                         document.body.appendChild(a); a.click();
                         document.getElementById('ios-modal').style.display = 'flex';
                     } else {
-                        // Android direct download
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}_${Date.now()}.webm`;
