@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (Fixed UI)</title>
+    <title>Shot List AI (V15.3)</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
@@ -15,20 +15,10 @@
         /* Setup */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
         
-        /* Lang Button (Fixed Position) */
-        .lang-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 20; }
-        .lang-menu { position: absolute; top: 70px; left: 20px; background: #333; border-radius: 12px; overflow: hidden; display: none; z-index: 21; border: 1px solid #444; }
-        .lang-opt { padding: 12px 20px; color: white; border-bottom: 1px solid #444; cursor: pointer; font-size: 14px; }
-        .lang-opt:last-child { border-bottom: none; }
-        .lang-opt:active { background: var(--primary); }
+        /* Lang Select */
+        .lang-select { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 20px; font-size: 14px; outline: none; cursor: pointer; }
 
-        /* Title (Fixed Visibility) */
-        h1 { 
-            font-size: 42px; font-weight: 900; text-align: center; 
-            color: #FFFFFF; /* 純白 */
-            text-shadow: 0 0 20px rgba(10, 132, 255, 0.5); /* 藍色光暈 */
-            margin-bottom: 40px; letter-spacing: 1px;
-        }
+        h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
         
         .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-tab { flex: 1; padding: 12px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -134,13 +124,11 @@
 
     <div id="ui-layer">
         <div id="page-setup">
-            <!-- Lang Button -->
-            <div class="lang-btn" onclick="toggleLang()">🌐</div>
-            <div class="lang-menu" id="lang-menu">
-                <div class="lang-opt" onclick="changeLanguage('zh-TW')">🇹🇼 繁體中文</div>
-                <div class="lang-opt" onclick="changeLanguage('en-US')">🇺🇸 English</div>
-            </div>
-
+            <select class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="zh-TW">🇹🇼 繁體中文</option>
+                <option value="en-US">🇺🇸 English</option>
+            </select>
+            
             <h1>SHOT LIST AI</h1>
             
             <div class="mode-tabs">
@@ -222,8 +210,8 @@
                 "hint_imp": "💡 每行一個鏡頭，系統自動分析",
                 "btn_back": "❮ 修改", "btn_regen": "🔄 重來",
                 "btn_shoot": "✓ 開始拍攝", "btn_prev": "❮ 上一鏡", "btn_next": "下一鏡 ❯",
-                "loading": "AI 導演構思中...", "wrap_title": "IT'S A WRAP!",
-                "wrap_text": "恭喜殺青！<br>所有鏡頭已拍攝完成", "btn_home": "回到首頁",
+                "loading": "AI 導演構思中...", "status": "正在連接伺服器",
+                "wrap_title": "IT'S A WRAP!", "wrap_text": "恭喜殺青！<br>所有鏡頭已拍攝完成", "btn_home": "回到首頁",
                 "prompt_lang": "Traditional Chinese (Taiwan)",
                 "voc_shot": "特寫, 中景, 廣角, 微距",
                 "voc_move": "固定, 平移, 推進, 拉遠, 跟隨, 環繞",
@@ -239,8 +227,8 @@
                 "hint_imp": "💡 One shot per line",
                 "btn_back": "❮ Back", "btn_regen": "🔄 Regen",
                 "btn_shoot": "✓ Start Shooting", "btn_prev": "❮ Prev", "btn_next": "Next ❯",
-                "loading": "AI Director Thinking...", "wrap_title": "IT'S A WRAP!",
-                "wrap_text": "Great job!<br>All shots completed.", "btn_home": "Home",
+                "loading": "AI Director Thinking...", "status": "Connecting to server...",
+                "wrap_title": "IT'S A WRAP!", "wrap_text": "Great job!<br>All shots completed.", "btn_home": "Home",
                 "prompt_lang": "English",
                 "voc_shot": "Close-up, Medium Shot, Wide Shot, Macro",
                 "voc_move": "Static, Pan, Push In, Pull Out, Follow, Orbit",
@@ -250,15 +238,8 @@
             }
         };
 
-        function toggleLang() {
-            const menu = document.getElementById('lang-menu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        }
-
         function changeLanguage(lang) {
             currentLang = lang;
-            document.getElementById('lang-menu').style.display = 'none';
-            
             const t = I18N[lang];
             document.getElementById('topic').placeholder = t.placeholder;
             document.getElementById('script-input').placeholder = t.input_placeholder;
@@ -273,6 +254,7 @@
             document.getElementById('btn-prev').innerText = t.btn_prev;
             document.getElementById('btn-next').innerText = t.btn_next;
             document.getElementById('loading-title').innerText = t.loading;
+            document.getElementById('status-text').innerText = t.status;
             document.getElementById('wrap-title').innerText = t.wrap_title;
             document.getElementById('wrap-text').innerHTML = t.wrap_text;
             document.getElementById('btn-home').innerText = t.btn_home;
