@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (Enhanced)</title>
+    <title>Shot List AI</title>
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
@@ -14,10 +14,13 @@
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
         /* Setup */
-        #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); }
+        #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
+        
+        /* Lang Switch */
+        .lang-select { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 20px; font-size: 14px; outline: none; cursor: pointer; }
+
         h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
         
-        /* 新增：模式切換標籤 */
         .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-tab { flex: 1; padding: 12px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .mode-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -38,7 +41,6 @@
         .script-list { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
         .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
         
-        /* Tags */
         .tags { display: flex; gap: 10px; margin-bottom: 10px; }
         .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; letter-spacing: 0.5px; }
         .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; border: none; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
@@ -48,7 +50,7 @@
         .s-desc { font-size: 16px; color: #aaa; line-height: 1.5; }
         .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: #FFFFFF; color: #000000; padding: 18px; border-radius: 30px; border: none; font-weight: 800; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(255,255,255,0.2); cursor: pointer; }
 
-        /* AR Shooting */
+        /* AR */
         #page-ar { display: none; height: 100%; width: 100%; position: relative; padding: 20px; pointer-events: none; }
         #page-ar > * { pointer-events: auto; }
         .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; z-index: 20; }
@@ -76,14 +78,15 @@
         #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
         .status-text { font-size: 14px; color: #888; margin-top: 10px; }
         
-        #wrap-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .wrap-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 80%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        /* Modals */
+        #wrap-modal, #ios-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .wrap-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 85%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s; }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .wrap-icon { font-size: 60px; margin-bottom: 20px; display: block; }
-        .wrap-title { font-size: 24px; font-weight: 800; margin-bottom: 10px; background: linear-gradient(to right, #FFD700, #FF8C00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .wrap-text { font-size: 16px; color: #aaa; margin-bottom: 30px; line-height: 1.5; }
-        .btn-home { width: 100%; padding: 16px; background: #333; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-home:active { background: #444; }
+        .wrap-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #fff; }
+        .wrap-text { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; text-align: left; }
+        .btn-home { width: 100%; padding: 16px; background: #333; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-ok { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
     </style>
 </head>
@@ -92,91 +95,82 @@
 
     <div id="overlay-loading">
         <div style="font-size:30px;margin-bottom:10px">🪄</div>
-        <div style="font-size:18px;font-weight:bold">AI 導演構思中...</div>
+        <div style="font-size:18px;font-weight:bold" id="loading-title">AI 導演構思中...</div>
         <div class="status-text" id="status-text">正在連接伺服器</div>
     </div>
 
+    <!-- Wrap Modal -->
     <div id="wrap-modal">
         <div class="wrap-card">
             <span class="wrap-icon">🎬</span>
-            <div class="wrap-title">IT'S A WRAP!</div>
-            <div class="wrap-text">恭喜殺青！<br>所有鏡頭已拍攝完成</div>
-            <button class="btn-home" onclick="location.reload()">回到首頁</button>
+            <div class="wrap-title" id="wrap-title">IT'S A WRAP!</div>
+            <div class="wrap-text" style="text-align:center" id="wrap-text">恭喜殺青！<br>所有鏡頭已拍攝完成</div>
+            <button class="btn-home" onclick="location.reload()" id="btn-home">回到首頁</button>
+        </div>
+    </div>
+
+    <!-- iOS Save Guide Modal -->
+    <div id="ios-modal">
+        <div class="wrap-card">
+            <div class="wrap-title">📲 影片已生成</div>
+            <div class="wrap-text">
+                iOS Safari 限制無法直接存入相簿。<br><br>
+                <b>請依照以下步驟：</b><br>
+                1. 點擊「下載」<br>
+                2. 點擊網址列左側 <b>"大小(Aa)"</b><br>
+                3. 選擇 <b>"下載項目"</b><br>
+                4. 點擊影片 -> 左下角 <b>"分享"</b> -> <b>"儲存影片"</b>
+            </div>
+            <button class="btn-ok" onclick="document.getElementById('ios-modal').style.display='none'">知道了</button>
         </div>
     </div>
 
     <div id="ui-layer">
         <div id="page-setup">
+            <select class="lang-select" onchange="changeLanguage(this.value)">
+                <option value="zh-TW">🇹🇼 繁體中文</option>
+                <option value="en-US">🇺🇸 English</option>
+            </select>
+            
             <h1>SHOT LIST AI</h1>
             
-            <!-- 新增：模式切換 -->
             <div class="mode-tabs">
-                <button class="mode-tab active" onclick="switchMode('generate')" id="tab-generate">
-                    🤖 AI 生成
-                </button>
-                <button class="mode-tab" onclick="switchMode('import')" id="tab-import">
-                    📄 導入腳本
-                </button>
+                <button class="mode-tab active" onclick="switchMode('generate')" id="tab-generate">🤖 AI 生成</button>
+                <button class="mode-tab" onclick="switchMode('import')" id="tab-import">📄 導入腳本</button>
             </div>
             
-            <!-- AI 生成模式 -->
             <div id="mode-generate">
                 <input type="text" id="topic" placeholder="輸入主題 (例: 拍一杯咖啡)">
                 <select id="format">
-                    <option value="Shorts">📱 短影音 (Reels)</option>
-                    <option value="Vlog">📹 YouTube 長片</option>
-                    <option value="Cinematic">🎬 電影感 B-Roll</option>
+                    <option value="Shorts">📱 Shorts (Reels)</option>
+                    <option value="Vlog">📹 Vlog (YouTube)</option>
+                    <option value="Cinematic">🎬 Cinematic (B-Roll)</option>
                 </select>
-                <button class="btn-main" onclick="generateScripts()">AI 生成腳本</button>
+                <button class="btn-main" onclick="generateScripts()" id="btn-generate">開始生成</button>
             </div>
             
-            <!-- 新增：導入腳本模式 -->
             <div id="mode-import" style="display: none;">
-                <textarea 
-                    id="script-input" 
-                    placeholder="貼上你的腳本內容，例如：
-
-Scene 1 - 室外咖啡店 - 白天
-特寫：咖啡杯冒出蒸氣
-運鏡：固定機位
-
-Scene 2 - 吧台
-中景：咖啡師製作拉花
-運鏡：由左至右平移
-
-或直接列出鏡頭：
-特寫咖啡杯，蒸氣上升
-中景咖啡師拉花
-廣角店內全景"
-                ></textarea>
-                
-                <button class="btn-main" onclick="parseImportedScript()">
-                    解析腳本並開始拍攝
-                </button>
-                
-                <div class="hint-text">
-                    💡 支援格式：<br>
-                    • 每個場景用 "Scene X" 開頭<br>
-                    • 或直接列出鏡頭描述（每行一個）<br>
-                    • 系統會自動識別鏡頭類型和運鏡
-                </div>
+                <textarea id="script-input" placeholder="貼上腳本..."></textarea>
+                <div class="hint-text" id="hint-import">💡 支援文字貼上，自動解析</div>
+                <br>
+                <button class="btn-main" onclick="parseImportedScript()" id="btn-parse">解析並開始</button>
             </div>
         </div>
 
         <div id="page-preview">
             <div class="preview-header">
                 <div class="nav-bar">
-                    <button class="nav-btn" onclick="goBack()">❮ 修改主題</button>
-                    <button class="nav-btn" onclick="confirmSelection()">確認拍攝</button>
+                    <button class="nav-btn" onclick="goBack()" id="btn-back">❮ 修改主題</button>
+                    <button class="nav-btn" onclick="generateScripts()" id="btn-regen">🔄 重新生成</button>
                 </div>
                 <div class="tab-box">
-                    <button class="tab-btn active" id="tab-a" onclick="switchTab('A')">方案 A</button>
-                    <button class="tab-btn" id="tab-b" onclick="switchTab('B')">方案 B</button>
+                    <button class="tab-btn active" id="tab-a" onclick="switchTab('A')">Plan A</button>
+                    <button class="tab-btn" id="tab-b" onclick="switchTab('B')">Plan B</button>
                 </div>
             </div>
             <div class="script-list" id="list-a"></div>
             <div class="script-list" id="list-b" style="display:none"></div>
-            <button class="fab-start" onclick="confirmSelection()">✓ 確認並開始拍攝</button>
+            <button class="fab-start" onclick="confirmSelection()" id="btn-start-shoot">✓ 確認並開始拍攝</button>
         </div>
 
         <div id="page-ar">
@@ -184,118 +178,111 @@ Scene 2 - 吧台
                 <div class="hud-badge" id="ar-idx">1/6</div>
                 <div class="hud-badge hud-blue" id="ar-shot-type">特寫</div>
             </div>
-            <div id="rec-timer">
-                <div class="rec-dot"></div>
-                <span id="timer-text">00:00</span>
-            </div>
+            <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
                     <img id="ar-thumb" class="ar-thumb" src="" alt="">
                     <div style="flex:1">
-                        <span class="ar-move-tag" id="ar-move">固定鏡頭</span>
-                        <div class="ar-title" id="ar-title">咖啡蒸氣</div>
-                        <div class="ar-desc" id="ar-desc">特寫咖啡杯...</div>
+                        <span class="ar-move-tag" id="ar-move">固定</span>
+                        <div class="ar-title" id="ar-title">Title</div>
+                        <div class="ar-desc" id="ar-desc">Description...</div>
                     </div>
                 </div>
             </div>
             <div class="camera-controls">
-                <button class="ctrl-btn-text" id="btn-prev" onclick="prevShot()">❮ 上一鏡</button>
+                <button class="ctrl-btn-text" id="btn-prev" onclick="prevShot()">❮ Prev</button>
                 <div class="shutter-outer" id="shutter-btn" onclick="toggleRecord()"><div class="shutter-inner"></div></div>
-                <button class="ctrl-btn-text" id="btn-next" onclick="nextShot()">下一鏡 ❯</button>
+                <button class="ctrl-btn-text" id="btn-next" onclick="nextShot()">Next ❯</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 禁止縮放
         document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-        
         const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY"; 
         let dataA=[], dataB=[], currentList=[], shotIdx=0;
         let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
+        let currentLang = 'zh-TW';
 
-        // ========== 新增：模式切換 ==========
+        // I18N
+        const I18N = {
+            "zh-TW": {
+                "placeholder": "輸入主題 (例: 拍一杯咖啡)",
+                "tab_gen": "🤖 AI 生成", "tab_imp": "📄 導入腳本",
+                "btn_gen": "開始生成", "btn_parse": "解析並開始",
+                "hint_imp": "💡 每行一個鏡頭，系統自動分析",
+                "btn_back": "❮ 修改", "btn_regen": "🔄 重來",
+                "btn_shoot": "✓ 開始拍攝", "btn_prev": "❮ 上一鏡", "btn_next": "下一鏡 ❯",
+                "loading": "AI 導演構思中...", "wrap_title": "IT'S A WRAP!",
+                "wrap_text": "恭喜殺青！<br>所有鏡頭已拍攝完成", "btn_home": "回到首頁",
+                "prompt_lang": "Traditional Chinese (Taiwan)",
+                "voc_shot": "特寫, 中景, 廣角, 微距",
+                "voc_move": "固定, 平移, 推進, 拉遠, 跟隨, 環繞"
+            },
+            "en-US": {
+                "placeholder": "Enter topic (e.g. Making Coffee)",
+                "tab_gen": "🤖 AI Generate", "tab_imp": "📄 Import",
+                "btn_gen": "Generate", "btn_parse": "Parse & Start",
+                "hint_imp": "💡 One shot per line",
+                "btn_back": "❮ Back", "btn_regen": "🔄 Regen",
+                "btn_shoot": "✓ Start Shooting", "btn_prev": "❮ Prev", "btn_next": "Next ❯",
+                "loading": "AI Director Thinking...", "wrap_title": "IT'S A WRAP!",
+                "wrap_text": "Great job!<br>All shots completed.", "btn_home": "Home",
+                "prompt_lang": "English",
+                "voc_shot": "Close-up, Medium Shot, Wide Shot, Macro",
+                "voc_move": "Static, Pan, Push In, Pull Out, Follow, Orbit"
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const t = I18N[lang];
+            document.getElementById('topic').placeholder = t.placeholder;
+            document.getElementById('tab-generate').innerText = t.tab_gen;
+            document.getElementById('tab-import').innerText = t.tab_imp;
+            document.getElementById('btn-generate').innerText = t.btn_gen;
+            document.getElementById('btn-parse').innerText = t.btn_parse;
+            document.getElementById('hint-import').innerText = t.hint_imp;
+            document.getElementById('btn-back').innerText = t.btn_back;
+            document.getElementById('btn-regen').innerText = t.btn_regen;
+            document.getElementById('btn-start-shoot').innerText = t.btn_shoot;
+            document.getElementById('btn-prev').innerText = t.btn_prev;
+            document.getElementById('btn-next').innerText = t.btn_next;
+            document.getElementById('loading-title').innerText = t.loading;
+            document.getElementById('wrap-title').innerText = t.wrap_title;
+            document.getElementById('wrap-text').innerHTML = t.wrap_text;
+            document.getElementById('btn-home').innerText = t.btn_home;
+        }
+
+        // Mode Switch
         function switchMode(mode) {
             document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById(`tab-${mode}`).classList.add('active');
-            
-            if (mode === 'generate') {
-                document.getElementById('mode-generate').style.display = 'block';
-                document.getElementById('mode-import').style.display = 'none';
-            } else {
-                document.getElementById('mode-generate').style.display = 'none';
-                document.getElementById('mode-import').style.display = 'block';
-            }
+            document.getElementById('mode-generate').style.display = mode === 'generate' ? 'block' : 'none';
+            document.getElementById('mode-import').style.display = mode === 'import' ? 'block' : 'none';
         }
 
-        // ========== 改進：更好的 Gemini Prompt ==========
-        function buildImprovedPrompt(topic, format) {
-            const formatGuides = {
-                "Shorts": {
-                    count: "6-8",
-                    style: "快節奏、視覺衝擊、適合直式",
-                    movements: "快速平移、跟拍、推進",
-                    tips: "每鏡2-5秒，強調視覺變化"
-                },
-                "Vlog": {
-                    count: "12-15",
-                    style: "自然、親切、故事性",
-                    movements: "手持跟拍、固定、緩慢平移",
-                    tips: "建立連結，展現真實"
-                },
-                "Cinematic": {
-                    count: "8-12",
-                    style: "電影感、情緒氛圍",
-                    movements: "推進、環繞、靜態長鏡頭",
-                    tips: "強調光影、構圖、情緒"
-                }
-            };
-
-            const guide = formatGuides[format];
-            
-            return `你是專業電影攝影指導。為「${topic}」設計兩套拍攝腳本。
-
-格式：${format}
-風格：${guide.style}
-鏡頭數：嚴格 ${guide.count} 個
-運鏡選項：${guide.movements}
-
-每個鏡頭包含：
-{
-  "shot_size": "特寫/近景/中景/全景/遠景",
-  "movement": "${guide.movements}中選一個",
-  "title": "鏡頭標題（15字內）",
-  "visual": "詳細畫面描述（至少50字）：
-    - 主體動作和表情
-    - 光線和色調（如：溫暖側光、冷調頂光）
-    - 構圖方式（如：三分法、中心構圖）
-    - 情緒氛圍（如：寧靜、緊張）
-    - 背景環境細節",
-  "duration": "建議時長（如：3秒、5-8秒）",
-  "audio_note": "聲音建議",
-  "img_prompt": "英文圖像提示詞"
-}
-
-要求：
-1. planA（經典方案）：傳統、穩定、適合新手
-2. planB（創意方案）：大膽、獨特、藝術感
-3. visual 描述至少50字，包含光線、色彩、構圖
-4. 運鏡要具體（如：「由左至右緩慢平移，3秒內完成」）
-5. 手機拍攝限制：禁止航拍、肩扛、專業軌道
-
-使用繁體中文（台灣）。
-輸出嚴格 JSON 格式：
-{
-  "planA": [...],
-  "planB": [...]
-}`;
+        function parseImportedScript() {
+            const input = document.getElementById('script-input').value.trim();
+            if (!input) return alert("Empty Script");
+            const lines = input.split('\n').filter(l => l.trim().length > 0);
+            dataA = lines.map((line, idx) => ({
+                shot_size: "Shot", movement: "Fix",
+                title: `Shot ${idx+1}`, visual: line,
+                img_prompt: "cinematic shot"
+            }));
+            dataB = [];
+            renderList('list-a', dataA);
+            document.getElementById('page-setup').style.display = 'none';
+            document.getElementById('page-preview').style.display = 'flex';
+            document.getElementById('tab-b').style.display = 'none';
+            switchTab('A');
         }
 
         async function fetchGemini(prompt) {
             const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
             for (let model of models) {
                 try {
-                    document.getElementById('status-text').innerText = `正在嘗試 ${model}...`;
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
                         method: "POST", headers: {"Content-Type":"application/json"},
                         body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
@@ -310,179 +297,45 @@ Scene 2 - 吧台
         async function generateScripts() {
             const topic = document.getElementById('topic').value;
             const format = document.getElementById('format').value;
-            if(!topic) return alert("請輸入主題");
+            if(!topic) return alert("Topic required");
 
             document.getElementById('overlay-loading').style.display = 'flex';
             
-            // 使用改進的 prompt
-            const prompt = buildImprovedPrompt(topic, format);
+            let shotCountStr = format==="Shorts"?"6 to 8": format==="Vlog"?"at least 15":"10 to 12";
+            let styleDesc = format==="Shorts"?"Fast-paced": format==="Vlog"?"Storytelling":"Cinematic";
+            
+            const t = I18N[currentLang];
+            let prompt = `Role: Professional DoP. Task: 2 Shotlists for "${topic}". Format: ${format} (${styleDesc}).
+            Count: STRICTLY ${shotCountStr} shots.
+            Target Language: ${t.prompt_lang}.
+            STRICT VOCABULARY (Use these terms ONLY):
+            - Movement: ${t.voc_move}
+            - Shot Size: ${t.voc_shot}
+            Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
             try {
                 const json = await fetchGemini(prompt);
                 const txt = json.candidates[0].content.parts[0].text.replace(/```json|```/g, "").trim();
                 const parsed = JSON.parse(txt);
                 dataA = parsed.planA; dataB = parsed.planB;
-                
                 renderList('list-a', dataA); renderList('list-b', dataB);
                 document.getElementById('overlay-loading').style.display = 'none';
                 document.getElementById('page-setup').style.display = 'none';
                 document.getElementById('page-preview').style.display = 'flex';
-                
-                // 顯示兩個方案標籤
                 document.getElementById('tab-b').style.display = 'block';
                 switchTab('A');
             } catch(e) { 
-                alert("生成失敗：" + e.message); 
+                alert("Error: " + e.message); 
                 document.getElementById('overlay-loading').style.display = 'none'; 
             }
-        }
-
-        // ========== 新增：導入腳本功能 ==========
-        function parseImportedScript() {
-            const input = document.getElementById('script-input').value.trim();
-            
-            if (!input) {
-                alert('請貼上腳本內容');
-                return;
-            }
-            
-            try {
-                const parsed = parseScriptText(input);
-                
-                if (parsed.length === 0) {
-                    alert('無法解析腳本，請檢查格式');
-                    return;
-                }
-                
-                dataA = parsed;
-                dataB = [];
-                
-                renderList('list-a', dataA);
-                document.getElementById('list-b').innerHTML = '<div style="text-align:center; padding:40px; color:#666;">導入模式僅有一套腳本</div>';
-                
-                document.getElementById('page-setup').style.display = 'none';
-                document.getElementById('page-preview').style.display = 'flex';
-                
-                // 隱藏 B 方案標籤
-                document.getElementById('tab-b').style.display = 'none';
-                switchTab('A');
-                
-                console.log('✅ 成功導入', parsed.length, '個鏡頭');
-                
-            } catch (e) {
-                alert('解析腳本時發生錯誤：' + e.message);
-                console.error(e);
-            }
-        }
-
-        function parseScriptText(text) {
-            const shots = [];
-            const scenePattern = /Scene\s+\d+[^\n]*/gi;
-            const sceneMatches = text.match(scenePattern);
-            
-            if (sceneMatches && sceneMatches.length > 0) {
-                const sceneSections = text.split(scenePattern).filter(s => s.trim());
-                sceneMatches.forEach((sceneHeader, idx) => {
-                    const content = sceneSections[idx] || '';
-                    const lines = content.split('\n').map(l => l.trim()).filter(l => l);
-                    if (lines.length > 0) {
-                        shots.push(parseSceneContent(sceneHeader, lines, idx + 1));
-                    }
-                });
-            } else {
-                const lines = text.split('\n')
-                    .map(l => l.trim())
-                    .filter(l => l && !l.startsWith('//') && !l.startsWith('#'));
-                
-                lines.forEach((line, idx) => {
-                    if (line.length > 5) {
-                        shots.push(parseSingleLine(line, idx + 1));
-                    }
-                });
-            }
-            
-            return shots;
-        }
-
-        function parseSceneContent(header, lines, index) {
-            const shotTypes = ['特寫', '近景', '中景', '全景', '遠景', '大遠景'];
-            const movements = ['固定', '平移', '推進', '拉遠', '搖鏡', '跟拍', '環繞', '升降'];
-            
-            let shotSize = '中景';
-            let movement = '固定';
-            let title = header;
-            let visual = lines.join('。');
-            
-            for (const type of shotTypes) {
-                if (visual.includes(type)) {
-                    shotSize = type;
-                    break;
-                }
-            }
-            
-            for (const move of movements) {
-                if (visual.includes(move)) {
-                    movement = move;
-                    break;
-                }
-            }
-            
-            if (lines[0] && lines[0].length < 30) {
-                title = lines[0];
-                visual = lines.slice(1).join('。');
-            }
-            
-            return {
-                shot_size: shotSize,
-                movement: movement,
-                title: title || `鏡頭 ${index}`,
-                visual: visual || '畫面描述',
-                duration: '5秒',
-                audio_note: '現場收音',
-                img_prompt: `cinematic shot, ${title}, professional filmmaking`
-            };
-        }
-
-        function parseSingleLine(line, index) {
-            const shotTypes = ['特寫', '近景', '中景', '全景', '遠景'];
-            const movements = ['固定', '平移', '推進', '拉遠', '搖鏡', '跟拍', '環繞'];
-            
-            let shotSize = '中景';
-            let movement = '固定';
-            
-            for (const type of shotTypes) {
-                if (line.includes(type)) {
-                    shotSize = type;
-                    break;
-                }
-            }
-            
-            for (const move of movements) {
-                if (line.includes(move)) {
-                    movement = move;
-                    break;
-                }
-            }
-            
-            const title = line.substring(0, 20) + (line.length > 20 ? '...' : '');
-            
-            return {
-                shot_size: shotSize,
-                movement: movement,
-                title: title,
-                visual: line,
-                duration: '5秒',
-                audio_note: '現場收音',
-                img_prompt: `cinematic shot, professional filmmaking`
-            };
         }
 
         function renderList(id, list) {
             document.getElementById(id).innerHTML = list.map((s,i)=>`
                 <div class="script-item">
                     <div class="tags">
-                        <span class="tag tag-shot">${s.shot_size||'鏡頭'}</span>
-                        <span class="tag tag-move">${s.movement||'固定'}</span>
+                        <span class="tag tag-shot">${s.shot_size||'Shot'}</span>
+                        <span class="tag tag-move">${s.movement||'Fix'}</span>
                     </div>
                     <div class="s-title">${i+1}. ${s.title}</div>
                     <div class="s-desc">${s.visual}</div>
@@ -508,7 +361,7 @@ Scene 2 - 吧台
                 document.getElementById('camera-feed').srcObject = stream;
                 document.getElementById('camera-feed').style.display = 'block';
                 setupRecorder(stream);
-            } catch(e) { console.log("相機異常"); }
+            } catch(e) { console.log("Camera Error"); }
             
             document.getElementById('page-preview').style.display = 'none';
             document.getElementById('ui-layer').style.background = 'transparent';
@@ -528,10 +381,23 @@ Scene 2 - 吧台
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: "video/webm" });
                     recordedChunks = [];
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}_${Date.now()}.webm`;
-                    document.body.appendChild(a); a.click();
+                    
+                    // iOS Save Guide Logic
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        // Show custom iOS guide
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}.webm`;
+                        document.body.appendChild(a); a.click();
+                        document.getElementById('ios-modal').style.display = 'flex';
+                    } else {
+                        // Android direct download
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}_${Date.now()}.webm`;
+                        document.body.appendChild(a); a.click();
+                    }
                 };
             } catch(e) {}
         }
@@ -562,8 +428,8 @@ Scene 2 - 吧台
             }
             const s = currentList[shotIdx];
             document.getElementById('ar-idx').innerText = `${shotIdx+1}/${currentList.length}`;
-            document.getElementById('ar-shot-type').innerText = s.shot_size || '鏡頭';
-            document.getElementById('ar-move').innerText = s.movement || '固定';
+            document.getElementById('ar-shot-type').innerText = s.shot_size || 'Shot';
+            document.getElementById('ar-move').innerText = s.movement || 'Fix';
             document.getElementById('ar-title').innerText = s.title;
             document.getElementById('ar-desc').innerText = s.visual;
             document.getElementById('ar-thumb').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt)}?width=100&height=100&nologo=true`;
