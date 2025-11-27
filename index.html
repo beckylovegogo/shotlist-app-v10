@@ -14,12 +14,12 @@
         body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; }
+        video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; }
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
         
-        .top-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
+        .top-controls { position: absolute; top: 20px; right: 20px; }
         .icon-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
         .icon-btn:hover { background: rgba(255,255,255,0.15); }
         
@@ -27,7 +27,8 @@
         .lang-menu.show { display: block; }
         .lang-option { padding: 12px 16px; color: #fff; cursor: pointer; font-size: 14px; border-bottom: 1px solid #333; }
         .lang-option:last-child { border-bottom: none; }
-        .lang-option:active { background: var(--primary); }
+        .lang-option.active { background: var(--primary); }
+        .lang-option:hover { background: rgba(255,255,255,0.05); }
 
         h1 { font-size: 36px; font-weight: 800; text-align: center; color: #FFFFFF; margin-bottom: 40px; text-shadow: 0 2px 10px rgba(255,255,255,0.3); }
         
@@ -41,7 +42,6 @@
         .btn-main:active { opacity: 0.8; }
         .hint-text { margin-top: 15px; font-size: 13px; color: #888; line-height: 1.6; }
         .quota-text { text-align: center; color: #666; font-size: 13px; margin-top: 15px; }
-        .quota-text span { color: var(--primary); font-weight: bold; }
 
         #page-preview { display: none; flex: 1; flex-direction: column; background: #000; height: 100%; overflow: hidden; }
         .preview-header { flex-shrink: 0; background: #111; border-bottom: 1px solid #333; padding-top: env(safe-area-inset-top); }
@@ -126,14 +126,7 @@
     <div id="ios-modal">
         <div class="modal-card">
             <div class="modal-title" id="ios-title">📲 影片下載完成</div>
-            <div class="modal-text left" id="ios-text">
-                <b>如何儲存到相簿：</b><br><br>
-                1️⃣ 打開 Safari 右上角「下載」按鈕（向下箭頭圖示）<br><br>
-                2️⃣ 看到影片列表，逐一點擊每個影片<br><br>
-                3️⃣ 影片會開啟播放，點擊左下角「分享」按鈕<br><br>
-                4️⃣ 選擇「儲存影片」或「儲存到相簿」<br><br>
-                5️⃣ 重複步驟 2-4 完成所有影片
-            </div>
+            <div class="modal-text left" id="ios-text">Loading...</div>
             <button class="btn-modal" onclick="closeModal('ios-modal')" id="btn-ios-ok">知道了</button>
         </div>
     </div>
@@ -154,8 +147,8 @@
             </div>
             
             <div class="lang-menu" id="lang-menu">
-                <div class="lang-option" onclick="selectLanguage('zh')">🇹🇼 繁體中文</div>
-                <div class="lang-option" onclick="selectLanguage('en')">🇺🇸 English</div>
+                <div class="lang-option" data-lang="zh" onclick="selectLanguage('zh')">🇹🇼 繁體中文</div>
+                <div class="lang-option" data-lang="en" onclick="selectLanguage('en')">🇺🇸 English</div>
             </div>
 
             <h1>SHOT LIST AI</h1>
@@ -173,7 +166,7 @@
                     <option value="Cinematic"></option>
                 </select>
                 <button class="btn-main" onclick="generateScripts()" id="btn-generate">Generate</button>
-                <div class="quota-text" id="quota-display">Quota: ...</div>
+                <div class="quota-text" id="quota-display"></div>
             </div>
             
             <div id="mode-import" style="display: none;">
@@ -232,7 +225,7 @@
         let dataA = [], dataB = [], currentList = [], shotIdx = 0;
         let mediaRecorder, recordedChunks = [], isRecording = false, timerInt;
         let allVideos = [];
-        let currentLang = 'zh';
+        let currentLang = 'zh';  // 預設中文，會在載入時被覆蓋
 
         const T = {
             zh: {
@@ -311,6 +304,7 @@
             }
         };
 
+        // Usage Limit Functions
         function checkUsageLimit() {
             const today = new Date().toDateString();
             const key = 'usage_' + today;
@@ -334,6 +328,7 @@
             display.innerHTML = text.replace('{n}', check.remaining);
         }
 
+        // Language Functions
         function detectLanguage() {
             const saved = localStorage.getItem('appLang');
             if (saved) return saved;
@@ -342,8 +337,19 @@
         }
 
         function switchLanguage(lang) {
+            console.log('Switching to:', lang);  // Debug
             currentLang = lang;
             localStorage.setItem('appLang', lang);
+            
+            // 更新選單狀態
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                if (opt.getAttribute('data-lang') === lang) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
             updateAllText();
         }
 
@@ -356,10 +362,11 @@
             document.getElementById('lang-menu').classList.remove('show');
         }
 
+        // 點擊外部關閉選單
         document.addEventListener('click', function(e) {
             const menu = document.getElementById('lang-menu');
             const controls = document.querySelector('.top-controls');
-            if (menu && controls && !controls.contains(e.target)) {
+            if (menu && controls && !controls.contains(e.target) && !menu.contains(e.target)) {
                 menu.classList.remove('show');
             }
         });
@@ -404,6 +411,7 @@
             updateUsageBadge();
         }
 
+        // Mode Switch
         function switchMode(mode) {
             document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById('tab-' + mode).classList.add('active');
@@ -415,6 +423,7 @@
             document.getElementById(id).style.display = 'none';
         }
 
+        // Import Script
         function parseImportedScript() {
             const t = T[currentLang];
             const input = document.getElementById('script-input').value.trim();
@@ -437,6 +446,7 @@
             switchTab('A');
         }
 
+        // Gemini API
         async function fetchGemini(prompt) {
             const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
             
@@ -531,6 +541,7 @@ Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "move
             document.getElementById('page-setup').style.display = 'flex';
         }
 
+        // Camera & Recording
         async function confirmSelection() {
             currentList = document.getElementById('list-a').style.display === 'block' ? dataA : dataB;
             allVideos = [];
@@ -675,17 +686,20 @@ Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "move
             }
         }
 
+        // Speech - 語音跟隨語言
         function speak(text) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = "en-US";
+                utterance.lang = currentLang === 'zh' ? 'zh-TW' : 'en-US';  // ✅ 修正！
                 window.speechSynthesis.speak(utterance);
             }
         }
 
+        // Initialize on Load
         window.addEventListener('load', () => {
             currentLang = detectLanguage();
+            console.log('Initial language:', currentLang);  // Debug
             switchLanguage(currentLang);
         });
     </script>
