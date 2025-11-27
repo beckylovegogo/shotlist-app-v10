@@ -686,13 +686,26 @@ Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "move
             }
         }
 
-        // Speech - 語音跟隨語言
+        // Speech - 固定使用英文男聲
         function speak(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+                speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = currentLang === 'zh' ? 'zh-TW' : 'en-US';  // ✅ 修正！
-                window.speechSynthesis.speak(utterance);
+                utterance.lang = 'en-US';
+                
+                // 尋找 Google US English Male 語音
+                const voices = speechSynthesis.getVoices();
+                const maleVoice = voices.find(v => 
+                    v.name === 'Google US English Male' ||
+                    v.name === 'Google US English' ||
+                    (v.lang === 'en-US' && v.name.toLowerCase().includes('male'))
+                );
+                
+                if (maleVoice) {
+                    utterance.voice = maleVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
             }
         }
 
