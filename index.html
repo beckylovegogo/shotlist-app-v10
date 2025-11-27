@@ -226,6 +226,7 @@
         let mediaRecorder, recordedChunks = [], isRecording = false, timerInt;
         let allVideos = [];
         let currentLang = 'zh';  // 預設中文，會在載入時被覆蓋
+        let devMode = false;  // 開發者模式
 
         const T = {
             zh: {
@@ -306,6 +307,11 @@
 
         // Usage Limit Functions
         function checkUsageLimit() {
+            // 開發者模式：無限額度
+            if (devMode) {
+                return { allowed: true, remaining: 999, devMode: true };
+            }
+            
             const today = new Date().toDateString();
             const key = 'usage_' + today;
             let count = parseInt(localStorage.getItem(key) || '0');
@@ -313,6 +319,9 @@
         }
 
         function incrementUsage() {
+            // 開發者模式：不計數
+            if (devMode) return;
+            
             const today = new Date().toDateString();
             const key = 'usage_' + today;
             let count = parseInt(localStorage.getItem(key) || '0');
@@ -324,8 +333,17 @@
             const check = checkUsageLimit();
             const t = T[currentLang];
             const display = document.getElementById('quota-display');
+            
+            // 開發者模式顯示
+            if (check.devMode) {
+                display.innerHTML = '🔓 Developer Mode (Unlimited)';
+                display.style.color = '#30D158';
+                return;
+            }
+            
             const text = (check.remaining <= 2) ? t.usageWarning : t.usageBadge;
             display.innerHTML = text.replace('{n}', check.remaining);
+            display.style.color = '';
         }
 
         // Language Functions
@@ -714,6 +732,53 @@ Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "move
             currentLang = detectLanguage();
             console.log('Initial language:', currentLang);  // Debug
             switchLanguage(currentLang);
+            
+            // 開發者模式：長按標題 3 秒
+            let pressTimer;
+            const title = document.querySelector('h1');
+            
+            title.addEventListener('mousedown', () => {
+                pressTimer = setTimeout(() => {
+                    devMode = !devMode;
+                    updateUsageBadge();
+                    
+                    if (devMode) {
+                        alert('🔓 開發者模式已啟動\nDeveloper Mode Activated\n\n無限額度測試\nUnlimited Testing');
+                        title.style.color = '#30D158';
+                    } else {
+                        alert('🔒 開發者模式已關閉\nDeveloper Mode Deactivated');
+                        title.style.color = '#FFFFFF';
+                    }
+                }, 3000);
+            });
+            
+            title.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            title.addEventListener('mouseleave', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            // 手機觸控支援
+            title.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    devMode = !devMode;
+                    updateUsageBadge();
+                    
+                    if (devMode) {
+                        alert('🔓 開發者模式已啟動\nDeveloper Mode Activated\n\n無限額度測試\nUnlimited Testing');
+                        title.style.color = '#30D158';
+                    } else {
+                        alert('🔒 開發者模式已關閉\nDeveloper Mode Deactivated');
+                        title.style.color = '#FFFFFF';
+                    }
+                }, 3000);
+            });
+            
+            title.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
         });
     </script>
 </body>
