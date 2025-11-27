@@ -7,46 +7,42 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Shot List AI</title>
     
-    <!-- App Icon (加入主畫面時的圖示) -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5616/5616373.png">
     
     <style>
         :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
-        body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
+        body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* Camera */
         video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; image-rendering: high-quality; }
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
-        /* Setup */
         #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
         
-        /* Settings & Lang */
         .top-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
-        .icon-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .icon-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .icon-btn:hover { background: rgba(255,255,255,0.15); }
         
-        /* Lang Menu */
         .lang-menu { position: absolute; top: 70px; right: 20px; background: #1c1c1e; border: 1px solid #333; border-radius: 12px; overflow: hidden; display: none; box-shadow: 0 8px 20px rgba(0,0,0,0.5); width: 140px; z-index: 100; }
         .lang-menu.show { display: block; }
         .lang-option { padding: 12px 16px; color: #fff; cursor: pointer; font-size: 14px; border-bottom: 1px solid #333; }
         .lang-option:last-child { border-bottom: none; }
         .lang-option:active { background: var(--primary); }
 
-        h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
+        h1 { font-size: 36px; font-weight: 800; text-align: center; color: #FFFFFF; margin-bottom: 40px; text-shadow: 0 2px 10px rgba(255,255,255,0.3); }
         
-        .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .mode-tab { flex: 1; padding: 12px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .mode-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .mode-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
+        .mode-tab { flex: 1; padding: 14px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .mode-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 15px rgba(10,132,255,0.3); }
         
         input, select, textarea { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
         textarea { min-height: 200px; font-family: monospace; resize: vertical; line-height: 1.6; }
-        .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main:active { opacity: 0.8; }
         .hint-text { margin-top: 15px; font-size: 13px; color: #888; line-height: 1.6; }
         .quota-text { text-align: center; color: #666; font-size: 13px; margin-top: 15px; }
         .quota-text span { color: var(--primary); font-weight: bold; }
 
-        /* Preview */
         #page-preview { display: none; flex: 1; flex-direction: column; background: #000; height: 100%; overflow: hidden; }
         .preview-header { flex-shrink: 0; background: #111; border-bottom: 1px solid #333; padding-top: env(safe-area-inset-top); }
         .nav-bar { display: flex; justify-content: space-between; padding: 15px 20px; }
@@ -58,70 +54,65 @@
         .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
         
         .tags { display: flex; gap: 10px; margin-bottom: 10px; }
-        .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; letter-spacing: 0.5px; }
-        .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; border: none; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
+        .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; }
+        .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; }
         .tag-move { background: rgba(10,132,255,0.25); color: #64D2FF; border: 1px solid rgba(10,132,255,0.3); }
         
-        .s-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; color: #fff; }
+        .s-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; }
         .s-desc { font-size: 16px; color: #aaa; line-height: 1.5; }
         .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: #FFFFFF; color: #000000; padding: 18px; border-radius: 30px; border: none; font-weight: 800; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(255,255,255,0.2); cursor: pointer; }
 
-        /* AR */
         #page-ar { display: none; height: 100%; width: 100%; position: relative; padding: 20px; pointer-events: none; }
         #page-ar > * { pointer-events: auto; }
-        .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; z-index: 20; }
-        .hud-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; border-left: 4px solid #fff; }
+        .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+        .hud-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; border-left: 4px solid #fff; }
         .hud-blue { border-color: #0A84FF; color: #0A84FF; }
         
-        #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold;}
+        #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold; }
         .rec-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
         
         .ar-card-container { position: absolute; bottom: 140px; left: 20px; right: 20px; z-index: 20; transition: opacity 0.3s; }
         .glass-card { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 15px; align-items: flex-start; }
         .ar-thumb { width: 80px; height: 80px; border-radius: 12px; background: #333; object-fit: cover; flex-shrink: 0; }
-        .ar-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2; }
+        .ar-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
         .ar-desc { font-size: 15px; color: #ddd; line-height: 1.4; }
         .ar-move-tag { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block; }
         
         .camera-controls { position: absolute; bottom: 40px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
-        .ctrl-btn-text { padding: 14px 22px; border-radius: 30px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white; font-size: 16px; font-weight: bold; display: flex; justify-content: center; align-items: center; min-width: 90px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; }
-        .ctrl-btn-text:disabled { opacity: 0.3; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); }
-        .shutter-outer { width: 76px; height: 76px; border-radius: 50%; border: 4px solid white; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .ctrl-btn-text { padding: 14px 22px; border-radius: 30px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white; font-size: 16px; font-weight: bold; min-width: 90px; cursor: pointer; }
+        .ctrl-btn-text:disabled { opacity: 0.3; }
+        .shutter-outer { width: 76px; height: 76px; border-radius: 50%; border: 4px solid white; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
-        /* Modals */
-        #overlay-loading, #wrap-modal, #ios-modal, #limit-modal, #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
+        #overlay-loading, #wrap-modal, #ios-modal, #limit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); flex-direction: column; }
+        
         .loading-wand { font-size: 80px; margin-bottom: 30px; animation: wandShine 1.5s ease-in-out infinite; filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)); }
-        @keyframes wandShine { 0%, 100% { transform: rotate(-10deg) scale(1); } 50% { transform: rotate(10deg) scale(1.1); } }
-        .loading-title { font-size: 20px; font-weight: 700; color: #fff; }
-        .status-text { font-size: 14px; color: #888; margin-top: 10px; }
+        @keyframes wandShine {
+            0%, 100% { transform: rotate(-10deg) scale(1); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4)); }
+            50% { transform: rotate(10deg) scale(1.1); filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) drop-shadow(0 0 60px rgba(255, 255, 255, 0.8)); }
+        }
+        .loading-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 1px; }
         
         .modal-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 85%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s; }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-icon { font-size: 60px; margin-bottom: 20px; display: block; }
+        .modal-icon { font-size: 60px; margin-bottom: 20px; }
         .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 15px; }
         .modal-text { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
         .modal-text.left { text-align: left; }
         .btn-modal { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-secondary { background: #333; }
-        .btn-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #666; font-size: 24px; cursor: pointer; }
-        .link-help { color: var(--primary); font-size: 13px; text-decoration: none; display: block; margin-top: 15px; }
-
     </style>
 </head>
 <body>
     <video id="camera-feed" autoplay playsinline muted></video>
 
-    <!-- Loading -->
     <div id="overlay-loading">
         <div class="loading-wand">🪄</div>
         <div class="loading-title" id="loading-title">Loading...</div>
-        <div class="status-text" id="status-text">Connecting...</div>
     </div>
 
-    <!-- Wrap Modal -->
     <div id="wrap-modal">
         <div class="modal-card">
             <div class="modal-icon">🎬</div>
@@ -132,16 +123,21 @@
         </div>
     </div>
 
-    <!-- iOS Save Guide -->
     <div id="ios-modal">
         <div class="modal-card">
-            <div class="modal-title" id="ios-title">📲 Video Ready</div>
-            <div class="modal-text left" id="ios-text">iOS requires manual saving...</div>
-            <button class="btn-modal" onclick="closeModal('ios-modal')" id="btn-ios-ok">Got it</button>
+            <div class="modal-title" id="ios-title">📲 影片下載完成</div>
+            <div class="modal-text left" id="ios-text">
+                <b>如何儲存到相簿：</b><br><br>
+                1️⃣ 打開 Safari 右上角「下載」按鈕（向下箭頭圖示）<br><br>
+                2️⃣ 看到影片列表，逐一點擊每個影片<br><br>
+                3️⃣ 影片會開啟播放，點擊左下角「分享」按鈕<br><br>
+                4️⃣ 選擇「儲存影片」或「儲存到相簿」<br><br>
+                5️⃣ 重複步驟 2-4 完成所有影片
+            </div>
+            <button class="btn-modal" onclick="closeModal('ios-modal')" id="btn-ios-ok">知道了</button>
         </div>
     </div>
 
-    <!-- Limit Modal -->
     <div id="limit-modal">
         <div class="modal-card">
             <div class="modal-icon">⏰</div>
@@ -151,23 +147,10 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal">
-        <div class="modal-card" style="position:relative;">
-            <button class="btn-close" onclick="closeModal('settings-modal')">×</button>
-            <div class="modal-title">Settings</div>
-            <div class="modal-text">Enter your Gemini API Key<br>for unlimited access</div>
-            <input type="text" id="custom-key" placeholder="AIza..." style="margin-bottom:10px; font-size:14px;">
-            <button class="btn-modal" onclick="saveSettings()">Save Key</button>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link-help">👉 Get Free Key</a>
-        </div>
-    </div>
-
     <div id="ui-layer">
         <div id="page-setup">
             <div class="top-controls">
                 <button class="icon-btn" onclick="toggleLangMenu()">🌐</button>
-                <button class="icon-btn" onclick="openSettings()">⚙️</button>
             </div>
             
             <div class="lang-menu" id="lang-menu">
@@ -196,7 +179,6 @@
             <div id="mode-import" style="display: none;">
                 <textarea id="script-input" placeholder=""></textarea>
                 <div class="hint-text" id="hint-import">Hint</div>
-                <br>
                 <button class="btn-main" onclick="parseImportedScript()" id="btn-parse">Parse</button>
             </div>
         </div>
@@ -244,78 +226,99 @@
     <script>
         document.addEventListener('gesturestart', e => e.preventDefault());
         
-        const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY"; 
+        const API_KEY = "AIzaSyBNRTr84ne2N1ikiUkMt2HilmiwuZvHXCY";
         const MAX_DAILY_USES = 5;
         
-        let dataA=[], dataB=[], currentList=[], shotIdx=0;
-        let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
-        let allVideos = []; 
+        let dataA = [], dataB = [], currentList = [], shotIdx = 0;
+        let mediaRecorder, recordedChunks = [], isRecording = false, timerInt;
+        let allVideos = [];
         let currentLang = 'zh';
 
-        // i18n
         const T = {
             zh: {
                 topicPlaceholder: "輸入主題 (例: 拍一杯咖啡)",
                 scriptPlaceholder: "請貼上腳本，每行一個鏡頭...\n例如：\n特寫咖啡杯\n中景拉花\n廣角全景",
-                formatShort: "📱 短影音 (Reels)", formatVlog: "📹 YouTube 長片", formatCinematic: "🎬 電影感 B-Roll",
-                tabGenerate: "🤖 AI 生成", tabImport: "📄 導入腳本",
-                btnGenerate: "開始生成", btnParse: "解析並開始",
+                formatShort: "📱 短影音 (Reels)",
+                formatVlog: "📹 YouTube 長片",
+                formatCinematic: "🎬 電影感 B-Roll",
+                tabGenerate: "🤖 AI 生成",
+                tabImport: "📄 導入腳本",
+                btnGenerate: "開始生成",
+                btnParse: "解析並開始",
                 hintImport: "💡 每行一個鏡頭，系統自動分析",
-                btnBack: "❮ 修改主題", btnRegen: "🔄 重新生成", btnStart: "✓ 確認並開始拍攝",
-                btnPrev: "❮ 上一鏡", btnNext: "下一鏡 ❯",
-                tabA: "方案 A", tabB: "方案 B",
+                btnBack: "❮ 修改主題",
+                btnRegen: "🔄 重新生成",
+                btnStart: "✓ 確認並開始拍攝",
+                btnPrev: "❮ 上一鏡",
+                btnNext: "下一鏡 ❯",
+                tabA: "方案 A",
+                tabB: "方案 B",
                 loadingTitle: "AI 導演構思中...",
-                wrapTitle: "IT'S A WRAP!", wrapText: "恭喜殺青！<br>所有鏡頭已拍攝完成",
-                btnDownload: "下載全部影片", btnHome: "回到首頁",
-                iosTitle: "📲 影片已生成",
-                iosText: "iOS Safari 限制無法直接存入相簿。<br><br><b>請依照以下步驟：</b><br>1. 點擊下方「下載全部影片」<br>2. 點擊網址列左側 <b>\"大小(Aa)\"</b><br>3. 選擇 <b>\"下載項目\"</b><br>4. 點擊影片 → 左下角 <b>\"分享\"</b> → <b>\"儲存影片\"</b>",
+                wrapTitle: "IT'S A WRAP!",
+                wrapText: "恭喜殺青！<br>所有鏡頭已拍攝完成",
+                btnDownload: "下載全部影片",
+                btnHome: "回到首頁",
+                iosTitle: "📲 影片下載完成",
+                iosText: "<b>如何儲存到相簿：</b><br><br>1️⃣ 打開 Safari 右上角「下載」按鈕（向下箭頭圖示）<br><br>2️⃣ 看到影片列表，逐一點擊每個影片<br><br>3️⃣ 影片會開啟播放，點擊左下角「分享」按鈕<br><br>4️⃣ 選擇「儲存影片」或「儲存到相簿」<br><br>5️⃣ 重複步驟 2-4 完成所有影片",
                 btnOk: "知道了",
-                limitTitle: "今日額度已用完", limitText: "今天的 5 次免費生成已用完。<br><br>明天再來繼續創作！",
-                usageBadge: "今日剩餘：{n} 次", usageWarning: "⚠️ 今日剩餘：{n} 次",
-                alertTopic: "請輸入主題", alertError: "生成失敗：",
+                limitTitle: "今日額度已用完",
+                limitText: "今天的 5 次免費生成已用完。<br><br>明天再來繼續創作！",
+                usageBadge: "今日剩餘：{n} 次",
+                usageWarning: "⚠️ 今日剩餘：{n} 次",
+                alertEmpty: "請輸入腳本內容",
+                alertTopic: "請輸入主題",
+                alertError: "生成失敗：",
                 promptLang: "Traditional Chinese (Taiwan)",
-                vocShot: "特寫, 中景, 廣角, 微距", vocMove: "固定, 平移, 推進, 拉遠, 跟隨, 環繞"
+                vocShot: "特寫, 中景, 廣角, 微距",
+                vocMove: "固定, 平移, 推進, 拉遠, 跟隨, 環繞"
             },
             en: {
                 topicPlaceholder: "Enter topic (e.g., Making Coffee)",
-                scriptPlaceholder: "Paste your script here...\nOne shot per line:\nClose-up of cup\nMedium shot of latte art",
-                formatShort: "📱 Short Video (Reels)", formatVlog: "📹 YouTube Vlog", formatCinematic: "🎬 Cinematic B-Roll",
-                tabGenerate: "🤖 AI Generate", tabImport: "📄 Import Script",
-                btnGenerate: "Generate", btnParse: "Parse & Start",
+                scriptPlaceholder: "Paste your script here...\nOne shot per line:\nClose-up of cup\nMedium shot of latte art\nWide shot of cafe",
+                formatShort: "📱 Short Video (Reels)",
+                formatVlog: "📹 YouTube Vlog",
+                formatCinematic: "🎬 Cinematic B-Roll",
+                tabGenerate: "🤖 AI Generate",
+                tabImport: "📄 Import Script",
+                btnGenerate: "Generate",
+                btnParse: "Parse & Start",
                 hintImport: "💡 One shot per line, auto-analyzed",
-                btnBack: "❮ Edit Topic", btnRegen: "🔄 Regenerate", btnStart: "✓ Confirm & Start",
-                btnPrev: "❮ Previous", btnNext: "Next ❯",
-                tabA: "Plan A", tabB: "Plan B",
+                btnBack: "❮ Edit Topic",
+                btnRegen: "🔄 Regenerate",
+                btnStart: "✓ Confirm & Start Filming",
+                btnPrev: "❮ Previous",
+                btnNext: "Next ❯",
+                tabA: "Plan A",
+                tabB: "Plan B",
                 loadingTitle: "AI Director Thinking...",
-                wrapTitle: "IT'S A WRAP!", wrapText: "Great job!<br>All shots completed.",
-                btnDownload: "Download All Videos", btnHome: "Home",
-                iosTitle: "📲 Videos Ready",
-                iosText: "iOS Safari requires manual saving.<br><br><b>Steps:</b><br>1. Tap 'Download All Videos'<br>2. Tap <b>'Aa'</b> icon in address bar<br>3. Select <b>'Downloads'</b><br>4. Tap video → <b>'Share'</b> → <b>'Save Video'</b>",
+                wrapTitle: "IT'S A WRAP!",
+                wrapText: "Great job!<br>All shots completed.",
+                btnDownload: "Download All Videos",
+                btnHome: "Home",
+                iosTitle: "📲 Download Complete",
+                iosText: "<b>How to save to Photos:</b><br><br>1️⃣ Tap Safari's download button (arrow down icon) in top-right<br><br>2️⃣ See video list, tap each video<br><br>3️⃣ Video plays, tap share button (bottom-left)<br><br>4️⃣ Select 'Save Video' or 'Save to Photos'<br><br>5️⃣ Repeat steps 2-4 for all videos",
                 btnOk: "Got it",
-                limitTitle: "Daily Limit Reached", limitText: "You've used all 5 free generations today.<br><br>Come back tomorrow!",
-                usageBadge: "Remaining: {n}", usageWarning: "⚠️ Remaining: {n}",
-                alertTopic: "Please enter a topic", alertError: "Generation failed: ",
+                limitTitle: "Daily Limit Reached",
+                limitText: "You've used all 5 free generations today.<br><br>Come back tomorrow!",
+                usageBadge: "Remaining today: {n}",
+                usageWarning: "⚠️ Remaining: {n}",
+                alertEmpty: "Please enter script content",
+                alertTopic: "Please enter a topic",
+                alertError: "Generation failed: ",
                 promptLang: "English",
-                vocShot: "Close-up, Medium Shot, Wide Shot, Macro", vocMove: "Static, Pan, Push In, Pull Out, Follow, Orbit"
+                vocShot: "Close-up, Medium Shot, Wide Shot, Macro",
+                vocMove: "Static, Pan, Push In, Pull Out, Follow, Orbit"
             }
         };
 
-        // Usage Limit
         function checkUsageLimit() {
             const today = new Date().toDateString();
             const key = 'usage_' + today;
-            const userKey = localStorage.getItem('user_gemini_key');
-            if (userKey && userKey.length > 10) {
-                document.getElementById('quota-display').innerText = "✨ Premium (Unlimited)";
-                return { allowed: true };
-            }
             let count = parseInt(localStorage.getItem(key) || '0');
             return { allowed: count < MAX_DAILY_USES, remaining: MAX_DAILY_USES - count };
         }
 
         function incrementUsage() {
-            const userKey = localStorage.getItem('user_gemini_key');
-            if (userKey && userKey.length > 10) return;
             const today = new Date().toDateString();
             const key = 'usage_' + today;
             let count = parseInt(localStorage.getItem(key) || '0');
@@ -327,264 +330,357 @@
             const check = checkUsageLimit();
             const t = T[currentLang];
             const display = document.getElementById('quota-display');
-            if (check.remaining !== undefined) {
-                display.innerHTML = (check.remaining <= 2) ? t.usageWarning.replace('{n}', check.remaining) : t.usageBadge.replace('{n}', check.remaining);
-            }
+            const text = (check.remaining <= 2) ? t.usageWarning : t.usageBadge;
+            display.innerHTML = text.replace('{n}', check.remaining);
         }
 
-        // Lang & UI
         function detectLanguage() {
             const saved = localStorage.getItem('appLang');
             if (saved) return saved;
-            return (navigator.language || navigator.userLanguage).startsWith('zh') ? 'zh' : 'en';
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.startsWith('zh') ? 'zh' : 'en';
         }
 
         function switchLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('appLang', lang);
             updateAllText();
+        }
+
+        function toggleLangMenu() {
+            document.getElementById('lang-menu').classList.toggle('show');
+        }
+
+        function selectLanguage(lang) {
+            switchLanguage(lang);
             document.getElementById('lang-menu').classList.remove('show');
         }
 
-        function toggleLangMenu() { document.getElementById('lang-menu').classList.toggle('show'); }
-        function selectLanguage(lang) { switchLanguage(lang); }
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('lang-menu');
+            const controls = document.querySelector('.top-controls');
+            if (menu && controls && !controls.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
 
         function updateAllText() {
             const t = T[currentLang];
+            
             document.getElementById('topic').placeholder = t.topicPlaceholder;
             document.getElementById('script-input').placeholder = t.scriptPlaceholder;
-            const fmt = document.getElementById('format').options;
-            fmt[0].text = t.formatShort; fmt[1].text = t.formatVlog; fmt[2].text = t.formatCinematic;
-            document.getElementById('tab-generate').innerText = t.tabGenerate;
-            document.getElementById('tab-import').innerText = t.tabImport;
-            document.getElementById('btn-generate').innerText = t.btnGenerate;
-            document.getElementById('btn-parse').innerText = t.btnParse;
-            document.getElementById('hint-import').innerText = t.hintImport;
-            document.getElementById('btn-back').innerText = t.btnBack;
-            document.getElementById('btn-regen').innerText = t.btnRegen;
-            document.getElementById('btn-start-shoot').innerText = t.btnStart;
-            document.getElementById('btn-prev').innerText = t.btnPrev;
-            document.getElementById('btn-next').innerText = t.btnNext;
-            document.getElementById('tab-a').innerText = t.tabA;
-            document.getElementById('tab-b').innerText = t.tabB;
-            document.getElementById('loading-title').innerText = t.loadingTitle;
-            document.getElementById('wrap-title').innerText = t.wrapTitle;
+            
+            const formatOptions = document.getElementById('format').options;
+            formatOptions[0].text = t.formatShort;
+            formatOptions[1].text = t.formatVlog;
+            formatOptions[2].text = t.formatCinematic;
+            
+            document.getElementById('tab-generate').innerHTML = t.tabGenerate;
+            document.getElementById('tab-import').innerHTML = t.tabImport;
+            document.getElementById('btn-generate').innerHTML = t.btnGenerate;
+            document.getElementById('btn-parse').innerHTML = t.btnParse;
+            document.getElementById('hint-import').innerHTML = t.hintImport;
+            document.getElementById('btn-back').innerHTML = t.btnBack;
+            document.getElementById('btn-regen').innerHTML = t.btnRegen;
+            document.getElementById('btn-start').innerHTML = t.btnStart;
+            document.getElementById('btn-prev').innerHTML = t.btnPrev;
+            document.getElementById('btn-next').innerHTML = t.btnNext;
+            
+            document.getElementById('tab-a').innerHTML = t.tabA;
+            document.getElementById('tab-b').innerHTML = t.tabB;
+            
+            document.getElementById('loading-title').innerHTML = t.loadingTitle;
+            document.getElementById('wrap-title').innerHTML = t.wrapTitle;
             document.getElementById('wrap-text').innerHTML = t.wrapText;
-            document.getElementById('btn-download').innerText = t.btnDownload;
-            document.getElementById('btn-home').innerText = t.btnHome;
-            document.getElementById('ios-title').innerText = t.iosTitle;
+            document.getElementById('btn-download').innerHTML = t.btnDownload;
+            document.getElementById('btn-home').innerHTML = t.btnHome;
+            document.getElementById('ios-title').innerHTML = t.iosTitle;
             document.getElementById('ios-text').innerHTML = t.iosText;
-            document.getElementById('btn-ios-ok').innerText = t.btnOk;
-            document.getElementById('limit-title').innerText = t.limitTitle;
+            document.getElementById('btn-ios-ok').innerHTML = t.btnOk;
+            document.getElementById('limit-title').innerHTML = t.limitTitle;
             document.getElementById('limit-text').innerHTML = t.limitText;
-            document.getElementById('btn-limit-ok').innerText = t.btnOk;
+            document.getElementById('btn-limit-ok').innerHTML = t.btnOk;
+            
             updateUsageBadge();
         }
 
         function switchMode(mode) {
-            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-'+mode).classList.add('active');
-            document.getElementById('mode-generate').style.display = mode==='generate'?'block':'none';
-            document.getElementById('mode-import').style.display = mode==='import'?'block':'none';
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById('tab-' + mode).classList.add('active');
+            document.getElementById('mode-generate').style.display = mode === 'generate' ? 'block' : 'none';
+            document.getElementById('mode-import').style.display = mode === 'import' ? 'block' : 'none';
         }
 
-        function openSettings() { 
-            document.getElementById('settings-modal').style.display = 'flex'; 
-            const k = localStorage.getItem('user_gemini_key');
-            if(k) document.getElementById('custom-key').value = k;
-        }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function saveSettings() {
-            const k = document.getElementById('custom-key').value.trim();
-            if(k.length>10) localStorage.setItem('user_gemini_key', k);
-            else localStorage.removeItem('user_gemini_key');
-            closeModal('settings-modal');
-            checkUsageLimit();
-            updateUsageBadge();
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
-        // AI & Logic
         function parseImportedScript() {
+            const t = T[currentLang];
             const input = document.getElementById('script-input').value.trim();
-            if(!input) return alert("Empty");
-            const lines = input.split('\n').filter(l=>l.trim().length>0);
-            dataA = lines.map((l,i)=>({ shot_size: currentLang==='zh'?'鏡頭':'Shot', movement: currentLang==='zh'?'固定':'Static', title: `${i+1}`, visual: l, img_prompt: "cinematic" }));
-            dataB=[];
+            if (!input) return alert(t.alertEmpty);
+            
+            const lines = input.split('\n').filter(l => l.trim().length > 0);
+            dataA = lines.map((line, idx) => ({
+                shot_size: currentLang === 'zh' ? '鏡頭' : 'Shot',
+                movement: currentLang === 'zh' ? '固定' : 'Static',
+                title: currentLang === 'zh' ? `鏡頭 ${idx + 1}` : `Shot ${idx + 1}`,
+                visual: line,
+                img_prompt: "cinematic filmmaking shot"
+            }));
+            dataB = [];
+            
             renderList('list-a', dataA);
-            document.getElementById('page-setup').style.display='none';
-            document.getElementById('page-preview').style.display='flex';
-            document.getElementById('tab-b').style.display='none';
+            document.getElementById('page-setup').style.display = 'none';
+            document.getElementById('page-preview').style.display = 'flex';
+            document.getElementById('tab-b').style.display = 'none';
             switchTab('A');
         }
 
         async function fetchGemini(prompt) {
-            const userKey = localStorage.getItem('user_gemini_key');
-            const key = (userKey && userKey.length>10) ? userKey : API_KEY;
-            const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-            for (let m of models) {
+            const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
+            
+            for (let model of models) {
                 try {
-                    document.getElementById('status-text').innerText = `Connecting ${m}...`;
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
-                        method: "POST", headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
-                    if(!res.ok) throw new Error();
+                    if (!res.ok) throw new Error(res.statusText);
                     return await res.json();
-                } catch(e) {}
+                } catch (e) {
+                    console.warn(`${model} failed:`, e);
+                }
             }
-            throw new Error("Busy");
+            throw new Error("All models failed");
         }
 
         async function generateScripts() {
-            if(!checkUsageLimit().allowed) { document.getElementById('limit-modal').style.display='flex'; return; }
+            const t = T[currentLang];
             const topic = document.getElementById('topic').value.trim();
             const format = document.getElementById('format').value;
-            if(!topic) return alert(T[currentLang].alertTopic);
-
-            document.getElementById('overlay-loading').style.display='flex';
-            const t = T[currentLang];
-            const shotCount = format==="Shorts"?"6 to 8":format==="Vlog"?"at least 15":"10 to 12";
-            const style = format==="Shorts"?"Fast-paced":format==="Vlog"?"Storytelling":"Cinematic";
+            
+            if (!topic) return alert(t.alertTopic);
+            
+            const check = checkUsageLimit();
+            if (!check.allowed) {
+                document.getElementById('limit-modal').style.display = 'flex';
+                return;
+            }
+            
+            incrementUsage();
+            document.getElementById('overlay-loading').style.display = 'flex';
+            
+            const shotCount = format === "Shorts" ? "6 to 8" : format === "Vlog" ? "at least 15" : "10 to 12";
+            const style = format === "Shorts" ? "Fast-paced" : format === "Vlog" ? "Storytelling" : "Cinematic";
             
             const prompt = `Role: Professional DoP. Task: Create 2 shot lists for "${topic}". Format: ${format} (${style}).
-            Count: STRICTLY ${shotCount} shots.
-            Target Language: ${t.prompt_lang}.
-            VOCABULARY (use these terms ONLY):
-            - Movement: ${t.voc_move}
-            - Shot Size: ${t.voc_shot}
-            Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
+Shot Count: STRICTLY ${shotCount} shots.
+Target Language: ${t.promptLang}.
+VOCABULARY (use these terms ONLY):
+- Movement: ${t.vocMove}
+- Shot Size: ${t.vocShot}
+Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
             try {
                 const json = await fetchGemini(prompt);
                 const txt = json.candidates[0].content.parts[0].text.replace(/```json|```/g, "").trim();
                 const parsed = JSON.parse(txt);
-                dataA = parsed.planA; dataB = parsed.planB;
-                incrementUsage();
-                renderList('list-a', dataA); renderList('list-b', dataB);
-                document.getElementById('overlay-loading').style.display='none';
-                document.getElementById('page-setup').style.display='none';
-                document.getElementById('page-preview').style.display='flex';
-                document.getElementById('tab-b').style.display='block';
+                
+                dataA = parsed.planA;
+                dataB = parsed.planB;
+                
+                renderList('list-a', dataA);
+                renderList('list-b', dataB);
+                
+                document.getElementById('overlay-loading').style.display = 'none';
+                document.getElementById('page-setup').style.display = 'none';
+                document.getElementById('page-preview').style.display = 'flex';
+                document.getElementById('tab-b').style.display = 'block';
                 switchTab('A');
-            } catch(e) {
+            } catch (e) {
                 alert(t.alertError + e.message);
-                document.getElementById('overlay-loading').style.display='none';
+                document.getElementById('overlay-loading').style.display = 'none';
             }
         }
 
         function renderList(id, list) {
-            document.getElementById(id).innerHTML = list.map((s,i)=>`
+            document.getElementById(id).innerHTML = list.map((s, i) => `
                 <div class="script-item">
                     <div class="tags">
-                        <span class="tag tag-shot">${s.shot_size||'Shot'}</span>
-                        <span class="tag tag-move">${s.movement||'Fix'}</span>
+                        <span class="tag tag-shot">${s.shot_size || 'Shot'}</span>
+                        <span class="tag tag-move">${s.movement || 'Static'}</span>
                     </div>
-                    <div class="s-title">${i+1}. ${s.title}</div>
+                    <div class="s-title">${i + 1}. ${s.title}</div>
                     <div class="s-desc">${s.visual}</div>
-                </div>`).join('');
+                </div>
+            `).join('');
         }
 
         function switchTab(tab) {
-            currentList = tab==='A'?dataA:dataB;
-            document.getElementById('list-a').style.display = tab==='A'?'block':'none';
-            document.getElementById('list-b').style.display = tab==='B'?'block':'none';
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-            document.getElementById('tab-'+tab.toLowerCase()).classList.add('active');
+            currentList = tab === 'A' ? dataA : dataB;
+            document.getElementById('list-a').style.display = tab === 'A' ? 'block' : 'none';
+            document.getElementById('list-b').style.display = tab === 'B' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab.toLowerCase()).classList.add('active');
         }
-        function goBack() { document.getElementById('page-preview').style.display='none'; document.getElementById('page-setup').style.display='flex'; }
+
+        function goBack() {
+            document.getElementById('page-preview').style.display = 'none';
+            document.getElementById('page-setup').style.display = 'flex';
+        }
 
         async function confirmSelection() {
-            currentList = document.getElementById('list-a').style.display==='block'?dataA:dataB;
+            currentList = document.getElementById('list-a').style.display === 'block' ? dataA : dataB;
             allVideos = [];
+            
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio:true, video:{ facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30} } });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }
+                });
                 document.getElementById('camera-feed').srcObject = stream;
                 document.getElementById('camera-feed').style.display = 'block';
                 setupRecorder(stream);
-            } catch(e) {}
-            document.getElementById('page-preview').style.display='none';
-            document.getElementById('ui-layer').style.background='transparent';
-            document.getElementById('page-ar').style.display='block';
-            shotIdx=0; 
-            speak(currentLang==='zh'?'準備':'Standby');
+            } catch (e) {
+                console.error("Camera error:", e);
+            }
+            
+            document.getElementById('page-preview').style.display = 'none';
+            document.getElementById('ui-layer').style.background = 'transparent';
+            document.getElementById('page-ar').style.display = 'block';
+            shotIdx = 0;
+            speak("Standby");
             updateAR();
         }
 
         function setupRecorder(stream) {
-            let options = { mimeType:'video/webm;codecs=vp9', videoBitsPerSecond:5000000 };
-            if(!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType:'video/mp4' };
+            let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
+            
             try {
                 mediaRecorder = new MediaRecorder(stream, options);
-                mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, {type: "video/webm"});
-                    recordedChunks=[];
-                    allVideos.push({ blob: blob, shot: shotIdx+1, time: Date.now() });
+                    const blob = new Blob(recordedChunks, { type: "video/webm" });
+                    recordedChunks = [];
+                    allVideos.push({
+                        blob: blob,
+                        shotNumber: shotIdx + 1,
+                        timestamp: Date.now()
+                    });
+                    console.log(`Shot ${shotIdx + 1} saved. Total: ${allVideos.length} videos`);
                 };
-            } catch(e) {}
+            } catch (e) {
+                console.error("Recorder setup error:", e);
+            }
         }
 
         function toggleRecord() {
-            if(!mediaRecorder) return;
+            if (!mediaRecorder) return;
+            
             const btn = document.getElementById('shutter-btn');
             const timer = document.getElementById('rec-timer');
             const card = document.getElementById('ar-card');
             
-            if(!isRecording) {
-                recordedChunks=[]; mediaRecorder.start(); isRecording=true;
-                btn.classList.add('recording'); timer.style.display='flex'; card.style.opacity='0.3';
+            if (!isRecording) {
+                recordedChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                btn.classList.add('recording');
+                timer.style.display = 'flex';
+                card.style.opacity = '0.3';
                 
-                // ✅ 只在這裡喊 Action
-                speak("Action");
+                speak(`Action. Shot ${shotIdx + 1}`);
                 
-                let sec=0; timerInt=setInterval(()=>{ sec++; document.getElementById('timer-text').innerText=`00:${sec.toString().padStart(2,'0')}`; },1000);
+                let sec = 0;
+                timerInt = setInterval(() => {
+                    sec++;
+                    document.getElementById('timer-text').innerText = `00:${sec.toString().padStart(2, '0')}`;
+                }, 1000);
             } else {
-                mediaRecorder.stop(); isRecording=false;
-                btn.classList.remove('recording'); timer.style.display='none'; card.style.opacity='1';
-                clearInterval(timerInt); document.getElementById('timer-text').innerText="00:00";
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('recording');
+                timer.style.display = 'none';
+                card.style.opacity = '1';
+                clearInterval(timerInt);
+                document.getElementById('timer-text').innerText = "00:00";
                 
-                // ✅ 只在這裡喊 Cut
                 speak("Cut");
             }
         }
 
         function updateAR() {
-            if(shotIdx>=currentList.length) { document.getElementById('wrap-modal').style.display='flex'; speak("It's a wrap"); return; }
-            const s=currentList[shotIdx];
-            document.getElementById('ar-idx').innerText=`${shotIdx+1}/${currentList.length}`;
-            document.getElementById('ar-shot-type').innerText=s.shot_size||'Shot';
-            document.getElementById('ar-move').innerText=s.movement||'Fix';
-            document.getElementById('ar-title').innerText=s.title;
-            document.getElementById('ar-desc').innerText=s.visual;
-            document.getElementById('ar-thumb').src=`https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt)}?width=100&height=100&nologo=true`;
-            document.getElementById('btn-prev').disabled=(shotIdx===0);
+            if (shotIdx >= currentList.length) {
+                document.getElementById('wrap-modal').style.display = 'flex';
+                speak("It's a wrap");
+                return;
+            }
             
-            // ❌ 這裡不再喊 Action，只在錄影時喊
+            const s = currentList[shotIdx];
+            document.getElementById('ar-idx').innerText = `${shotIdx + 1}/${currentList.length}`;
+            document.getElementById('ar-shot-type').innerText = s.shot_size || 'Shot';
+            document.getElementById('ar-move').innerText = s.movement || 'Static';
+            document.getElementById('ar-title').innerText = s.title;
+            document.getElementById('ar-desc').innerText = s.visual;
+            document.getElementById('ar-thumb').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt || 'cinematic shot')}?width=100&height=100&nologo=true`;
+            document.getElementById('btn-prev').disabled = (shotIdx === 0);
         }
 
-        function nextShot() { if(isRecording) toggleRecord(); shotIdx++; updateAR(); if(shotIdx<currentList.length) speak(currentLang==='zh'?'下一鏡':'Next Shot'); }
-        function prevShot() { if(isRecording) toggleRecord(); if(shotIdx>0){ shotIdx--; updateAR(); speak(currentLang==='zh'?'上一鏡':'Previous Shot'); } }
-        
+        function nextShot() {
+            if (isRecording) toggleRecord();
+            shotIdx++;
+            updateAR();
+            if (shotIdx < currentList.length) {
+                speak(`Standby. Shot ${shotIdx + 1}`);
+            }
+        }
+
+        function prevShot() {
+            if (isRecording) toggleRecord();
+            if (shotIdx > 0) {
+                shotIdx--;
+                updateAR();
+                speak(`Standby. Shot ${shotIdx + 1}`);
+            }
+        }
+
         function downloadAllVideos() {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            allVideos.forEach((v,i) => {
+            
+            allVideos.forEach((video, index) => {
                 setTimeout(() => {
-                    const url = URL.createObjectURL(v.blob);
+                    const url = URL.createObjectURL(video.blob);
                     const a = document.createElement("a");
-                    a.style.display="none"; a.href=url; a.download=`shot_${v.shot}_${v.time}.webm`;
-                    document.body.appendChild(a); a.click();
-                    setTimeout(()=>URL.revokeObjectURL(url),100);
-                }, i*500);
+                    a.style.display = "none";
+                    a.href = url;
+                    a.download = `shot_${video.shotNumber}_${video.timestamp}.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                }, index * 500);
             });
-            if(isIOS) setTimeout(() => document.getElementById('ios-modal').style.display='flex', allVideos.length*500+500);
+            
+            if (isIOS) {
+                setTimeout(() => {
+                    document.getElementById('ios-modal').style.display = 'flex';
+                }, allVideos.length * 500 + 1000);
+            }
         }
 
-        function speak(txt) {
-            if('speechSynthesis' in window){
+        function speak(text) {
+            if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(txt);
-                u.lang = currentLang === 'zh' ? 'zh-TW' : 'en-US'; // 語言跟隨設定
-                window.speechSynthesis.speak(u);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = "en-US";
+                window.speechSynthesis.speak(utterance);
             }
         }
 
