@@ -1,295 +1,786 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Shot List AI (V10)</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Shot List AI</title>
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5616/5616373.png">
+    
     <style>
-        /* === 核心設定 === */
-        :root { --primary: #0A84FF; --accent: #32D74B; --bg: #000; --card: #1c1c1e; }
-        body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; }
+        :root { --primary: #0A84FF; --accent: #FFFFFF; --bg: #000; --card: #1c1c1e; }
+        body { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100dvh; width: 100vw; overflow: hidden; touch-action: none; }
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         video#camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; display: none; }
-        
         #ui-layer { position: relative; z-index: 10; height: 100%; width: 100%; background: var(--bg); display: flex; flex-direction: column; transition: background 0.5s; }
 
-        /* === 頁面 1 & 2 (保持 V9.1 的完美狀態) === */
-        #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); }
-        h1 { font-size: 36px; font-weight: 800; text-align: center; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
-        input, select { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
-        .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        #page-setup { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px; background: radial-gradient(circle at top right, #1a1a1a, #000000); position: relative; }
+        
+        .top-controls { position: absolute; top: 20px; right: 20px; }
+        .icon-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .icon-btn:hover { background: rgba(255,255,255,0.15); }
+        
+        .lang-menu { position: absolute; top: 70px; right: 20px; background: #1c1c1e; border: 1px solid #333; border-radius: 12px; overflow: hidden; display: none; box-shadow: 0 8px 20px rgba(0,0,0,0.5); width: 140px; z-index: 100; }
+        .lang-menu.show { display: block; }
+        .lang-option { padding: 12px 16px; color: #fff; cursor: pointer; font-size: 14px; border-bottom: 1px solid #333; }
+        .lang-option:last-child { border-bottom: none; }
+        .lang-option.active { background: var(--primary); }
+        .lang-option:hover { background: rgba(255,255,255,0.05); }
+
+        h1 { font-size: 36px; font-weight: 800; text-align: center; color: #FFFFFF; margin-bottom: 40px; text-shadow: 0 2px 10px rgba(255,255,255,0.3); }
+        
+        .mode-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
+        .mode-tab { flex: 1; padding: 14px; background: var(--card); border: 1px solid #333; color: #888; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .mode-tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 15px rgba(10,132,255,0.3); }
+        
+        input, select, textarea { width: 100%; padding: 16px; background: var(--card); border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 20px; font-size: 16px; outline: none; }
+        textarea { min-height: 200px; font-family: monospace; resize: vertical; line-height: 1.6; }
+        .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main:active { opacity: 0.8; }
+        .hint-text { margin-top: 15px; font-size: 13px; color: #888; line-height: 1.6; }
+        .quota-text { text-align: center; color: #666; font-size: 13px; margin-top: 15px; }
 
         #page-preview { display: none; flex: 1; flex-direction: column; background: #000; height: 100%; overflow: hidden; }
         .preview-header { flex-shrink: 0; background: #111; border-bottom: 1px solid #333; padding-top: env(safe-area-inset-top); }
         .nav-bar { display: flex; justify-content: space-between; padding: 15px 20px; }
-        .nav-btn { background: none; border: none; color: var(--primary); font-size: 16px; font-weight: bold; padding: 5px; }
-        .tab-box { display: flex; background: #000; padding: 5px; margin: 0 20px 15px 20px; border-radius: 10px; border: 1px solid #333; }
-        .tab-btn { flex: 1; padding: 10px; text-align: center; color: #666; font-weight: bold; border-radius: 8px; font-size: 14px; transition: 0.2s; }
-        .tab-btn.active { background: #333; color: #fff; }
+        .nav-btn { background: none; border: none; color: var(--primary); font-size: 16px; font-weight: bold; padding: 5px; cursor: pointer; }
+        .tab-box { display: flex; padding: 0 20px 15px 20px; gap: 15px; }
+        .tab-btn { flex: 1; padding: 12px; text-align: center; color: #888; font-weight: bold; border-radius: 12px; background: #1c1c1e; border: 1px solid #333; transition: 0.2s; cursor: pointer; font-size: 15px; }
+        .tab-btn.active { background: #333; color: #fff; border-color: #555; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .script-list { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
-        .script-item { background: var(--card); padding: 16px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #333; }
-        .tags { display: flex; gap: 8px; margin-bottom: 8px; }
-        .tag { font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: bold; }
-        .tag-shot { background: rgba(255,255,255,0.1); color: #ddd; }
-        .tag-move { background: rgba(10,132,255,0.2); color: var(--primary); }
-        .s-title { font-size: 18px; font-weight: bold; margin-bottom: 6px; color: #fff; }
-        .s-desc { font-size: 14px; color: #aaa; line-height: 1.5; }
-        .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: var(--accent); color: #000; padding: 16px; border-radius: 30px; border: none; font-weight: bold; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(50,215,75,0.3); }
+        .script-item { background: var(--card); padding: 20px; border-radius: 18px; margin-bottom: 12px; border: 1px solid #333; }
+        
+        .tags { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tag { font-size: 14px; padding: 6px 10px; border-radius: 8px; font-weight: bold; }
+        .tag-shot { background: rgba(255, 255, 255, 0.85); color: #000; }
+        .tag-move { background: rgba(10,132,255,0.25); color: #64D2FF; border: 1px solid rgba(10,132,255,0.3); }
+        
+        .s-title { font-size: 20px; font-weight: bold; margin-bottom: 6px; }
+        .s-desc { font-size: 16px; color: #aaa; line-height: 1.5; }
+        .fab-start { position: fixed; bottom: 40px; left: 5%; width: 90%; background: #FFFFFF; color: #000000; padding: 18px; border-radius: 30px; border: none; font-weight: 800; font-size: 18px; z-index: 99; box-shadow: 0 10px 30px rgba(255,255,255,0.2); cursor: pointer; }
 
-        /* === 頁面 3: AR 拍攝 (V10 重點) === */
         #page-ar { display: none; height: 100%; width: 100%; position: relative; padding: 20px; pointer-events: none; }
         #page-ar > * { pointer-events: auto; }
-
-        /* 左上角 HUD (垂直堆疊) */
-        .hud-container { 
-            position: absolute; top: 20px; left: 20px; 
-            display: flex; flex-direction: column; gap: 8px; /* 垂直間距 */
-            align-items: flex-start;
-            z-index: 20;
-        }
-        .hud-badge { 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); 
-            color: #fff; padding: 8px 16px; border-radius: 8px; 
-            font-size: 16px; /* 字體加大 */
-            font-weight: 800; letter-spacing: 0.5px;
-            border-left: 4px solid #fff; /* 左側裝飾線 */
-        }
-        .hud-blue { border-color: #0A84FF; color: #0A84FF; } /* 藍色高亮 */
-
-        /* 錄影計時 (居中) */
-        #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold;}
+        .hud-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+        .hud-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 800; border-left: 4px solid #fff; }
+        .hud-blue { border-color: #0A84FF; color: #0A84FF; }
         
-        /* AR 卡片 */
+        #rec-timer { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(255, 69, 58, 0.8); padding: 5px 15px; border-radius: 20px; display: none; align-items: center; gap: 8px; z-index: 30; color: white; font-weight: bold; }
+        .rec-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+        
         .ar-card-container { position: absolute; bottom: 140px; left: 20px; right: 20px; z-index: 20; transition: opacity 0.3s; }
         .glass-card { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 15px; align-items: flex-start; }
         .ar-thumb { width: 80px; height: 80px; border-radius: 12px; background: #333; object-fit: cover; flex-shrink: 0; }
-        .ar-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2; }
+        .ar-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
         .ar-desc { font-size: 15px; color: #ddd; line-height: 1.4; }
         .ar-move-tag { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block; }
-
-        /* 底部控制列 (新增上一鏡) */
-        .camera-controls { 
-            position: absolute; bottom: 40px; left: 20px; right: 20px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            z-index: 30; 
-        }
-        .ctrl-btn { 
-            width: 50px; height: 50px; border-radius: 50%; 
-            background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
-            border: none; color: white; font-size: 24px; display: flex; justify-content: center; align-items: center;
-        }
-        .ctrl-btn:disabled { opacity: 0.3; }
-
+        
+        .camera-controls { position: absolute; bottom: 40px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
+        .ctrl-btn-text { padding: 14px 22px; border-radius: 30px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white; font-size: 16px; font-weight: bold; min-width: 90px; cursor: pointer; }
+        .ctrl-btn-text:disabled { opacity: 0.3; }
         .shutter-outer { width: 76px; height: 76px; border-radius: 50%; border: 4px solid white; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .shutter-inner { width: 64px; height: 64px; border-radius: 50%; background: #FF453A; transition: 0.3s; }
         .shutter-outer.recording .shutter-inner { width: 30px; height: 30px; border-radius: 6px; }
 
-        #overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        #overlay-loading, #wrap-modal, #ios-modal, #limit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); flex-direction: column; }
+        
+        .loading-wand { font-size: 80px; margin-bottom: 30px; animation: wandShine 1.5s ease-in-out infinite; filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)); }
+        @keyframes wandShine {
+            0%, 100% { transform: rotate(-10deg) scale(1); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4)); }
+            50% { transform: rotate(10deg) scale(1.1); filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) drop-shadow(0 0 60px rgba(255, 255, 255, 0.8)); }
+        }
+        .loading-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+        
+        .modal-card { background: #1c1c1e; border-radius: 30px; padding: 40px 30px; text-align: center; border: 1px solid #333; width: 85%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.4s; }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-icon { font-size: 60px; margin-bottom: 20px; }
+        .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 15px; }
+        .modal-text { font-size: 15px; color: #aaa; margin-bottom: 25px; line-height: 1.6; }
+        .modal-text.left { text-align: left; }
+        .btn-modal { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-secondary { background: #333; }
     </style>
 </head>
 <body>
     <video id="camera-feed" autoplay playsinline muted></video>
 
     <div id="overlay-loading">
-        <div style="font-size:30px;margin-bottom:10px">🪄</div>
-        <div style="font-size:18px;font-weight:bold">AI 導演工作中...</div>
+        <div class="loading-wand">🪄</div>
+        <div class="loading-title" id="loading-title">Loading...</div>
+    </div>
+
+    <div id="wrap-modal">
+        <div class="modal-card">
+            <div class="modal-icon">🎬</div>
+            <div class="modal-title" id="wrap-title">IT'S A WRAP!</div>
+            <div class="modal-text" id="wrap-text">All shots completed!</div>
+            <button class="btn-modal" onclick="downloadAllVideos()" id="btn-download">Download All</button>
+            <button class="btn-modal btn-secondary" onclick="location.reload()" id="btn-home">Home</button>
+        </div>
+    </div>
+
+    <div id="ios-modal">
+        <div class="modal-card">
+            <div class="modal-title" id="ios-title">📲 影片下載完成</div>
+            <div class="modal-text left" id="ios-text">Loading...</div>
+            <button class="btn-modal" onclick="closeModal('ios-modal')" id="btn-ios-ok">知道了</button>
+        </div>
+    </div>
+
+    <div id="limit-modal">
+        <div class="modal-card">
+            <div class="modal-icon">⏰</div>
+            <div class="modal-title" id="limit-title">Daily Limit</div>
+            <div class="modal-text" id="limit-text">Limit reached...</div>
+            <button class="btn-modal" onclick="closeModal('limit-modal')" id="btn-limit-ok">OK</button>
+        </div>
     </div>
 
     <div id="ui-layer">
-        <!-- Setup -->
         <div id="page-setup">
+            <div class="top-controls">
+                <button class="icon-btn" onclick="toggleLangMenu()">🌐</button>
+            </div>
+            
+            <div class="lang-menu" id="lang-menu">
+                <div class="lang-option" data-lang="zh" onclick="selectLanguage('zh')">🇹🇼 繁體中文</div>
+                <div class="lang-option" data-lang="en" onclick="selectLanguage('en')">🇺🇸 English</div>
+            </div>
+
             <h1>SHOT LIST AI</h1>
-            <input type="text" id="topic" placeholder="輸入主題 (例: 拍一杯咖啡)">
-            <select id="format">
-                <option value="Shorts">📱 短影音 (Reels)</option>
-                <option value="Vlog">📹 YouTube 長片</option>
-                <option value="Cinematic">🎬 電影感 B-Roll</option>
-            </select>
-            <button class="btn-main" onclick="generateScripts()">開始生成</button>
+            
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="switchMode('generate')" id="tab-generate">🤖 AI</button>
+                <button class="mode-tab" onclick="switchMode('import')" id="tab-import">📄 Import</button>
+            </div>
+            
+            <div id="mode-generate">
+                <input type="text" id="topic" placeholder="">
+                <select id="format">
+                    <option value="Shorts"></option>
+                    <option value="Vlog"></option>
+                    <option value="Cinematic"></option>
+                </select>
+                <button class="btn-main" onclick="generateScripts()" id="btn-generate">Generate</button>
+                <div class="quota-text" id="quota-display"></div>
+            </div>
+            
+            <div id="mode-import" style="display: none;">
+                <textarea id="script-input" placeholder=""></textarea>
+                <div class="hint-text" id="hint-import">Hint</div>
+                <button class="btn-main" onclick="parseImportedScript()" id="btn-parse">Parse</button>
+            </div>
         </div>
 
-        <!-- Preview -->
         <div id="page-preview">
             <div class="preview-header">
                 <div class="nav-bar">
-                    <button class="nav-btn" onclick="goBack()">❮ 修改主題</button>
-                    <button class="nav-btn" onclick="generateScripts()">🔄 重新生成</button>
+                    <button class="nav-btn" onclick="goBack()" id="btn-back">❮ Back</button>
+                    <button class="nav-btn" onclick="generateScripts()" id="btn-regen">🔄</button>
                 </div>
                 <div class="tab-box">
-                    <div class="tab-btn active" id="tab-a" onclick="switchTab('A')">方案 A</div>
-                    <div class="tab-btn" id="tab-b" onclick="switchTab('B')">方案 B</div>
+                    <button class="tab-btn active" id="tab-a" onclick="switchTab('A')">Plan A</button>
+                    <button class="tab-btn" id="tab-b" onclick="switchTab('B')">Plan B</button>
                 </div>
             </div>
             <div class="script-list" id="list-a"></div>
-            <div class="script-list" id="list-b" style="display:none;"></div>
-            <button class="fab-start" onclick="confirmSelection()">🎥 開始拍攝</button>
+            <div class="script-list" id="list-b" style="display:none"></div>
+            <button class="fab-start" onclick="confirmSelection()" id="btn-start">✓ Start</button>
         </div>
 
-        <!-- AR Shooting -->
         <div id="page-ar">
-            <!-- 左上 HUD -->
             <div class="hud-container">
-                <div class="hud-badge" id="ar-idx">1/5</div>
-                <div class="hud-badge hud-blue" id="ar-shot-type">特寫</div>
+                <div class="hud-badge" id="ar-idx">1/6</div>
+                <div class="hud-badge hud-blue" id="ar-shot-type">Shot</div>
             </div>
-
-            <!-- 計時器 -->
-            <div id="rec-timer"><span id="timer-text">00:00</span></div>
-
-            <!-- 卡片 -->
+            <div id="rec-timer"><div class="rec-dot"></div><span id="timer-text">00:00</span></div>
             <div class="ar-card-container" id="ar-card">
                 <div class="glass-card">
-                    <img id="ar-thumb" class="ar-thumb">
+                    <img id="ar-thumb" class="ar-thumb" src="" alt="">
                     <div style="flex:1">
-                        <span class="ar-move-tag" id="ar-move">PAN RIGHT</span>
-                        <div class="ar-title" id="ar-title"></div>
-                        <div class="ar-desc" id="ar-desc"></div>
+                        <span class="ar-move-tag" id="ar-move">Static</span>
+                        <div class="ar-title" id="ar-title">Title</div>
+                        <div class="ar-desc" id="ar-desc">Description...</div>
                     </div>
                 </div>
             </div>
-
-            <!-- 底部控制 (新增上一鏡) -->
             <div class="camera-controls">
-                <button class="ctrl-btn" id="btn-prev" onclick="prevShot()">↩︎</button>
+                <button class="ctrl-btn-text" id="btn-prev" onclick="prevShot()">❮</button>
                 <div class="shutter-outer" id="shutter-btn" onclick="toggleRecord()"><div class="shutter-inner"></div></div>
-                <button class="ctrl-btn" id="btn-next" onclick="nextShot()">➡︎</button>
+                <button class="ctrl-btn-text" id="btn-next" onclick="nextShot()">❯</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_KEY = "AIzaSyAe30BbN1vP2NVl--lXOMtU1kfdNGelPHg";
-        let dataA=[], dataB=[], currentList=[], shotIdx=0;
-        let mediaRecorder, recordedChunks=[], isRecording=false, timerInt;
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        
+        const API_KEY = "AIzaSyBPLwbVR8UVSqkIQH5bGhVeXFEIs6x4FbM";
+        const MAX_DAILY_USES = 5;
+        
+        let dataA = [], dataB = [], currentList = [], shotIdx = 0;
+        let mediaRecorder, recordedChunks = [], isRecording = false, timerInt;
+        let allVideos = [];
+        let currentLang = 'zh';  // 預設中文，會在載入時被覆蓋
+        let devMode = false;  // 開發者模式
+
+        const T = {
+            zh: {
+                topicPlaceholder: "輸入主題 (例: 拍一杯咖啡)",
+                scriptPlaceholder: "請貼上腳本，每行一個鏡頭...\n例如：\n特寫咖啡杯\n中景拉花\n廣角全景",
+                formatShort: "📱 短影音 (Reels)",
+                formatVlog: "📹 YouTube 長片",
+                formatCinematic: "🎬 電影感 B-Roll",
+                tabGenerate: "🤖 AI 生成",
+                tabImport: "📄 導入腳本",
+                btnGenerate: "開始生成",
+                btnParse: "解析並開始",
+                hintImport: "💡 每行一個鏡頭，系統自動分析",
+                btnBack: "❮ 修改主題",
+                btnRegen: "🔄 重新生成",
+                btnStart: "✓ 確認並開始拍攝",
+                btnPrev: "❮ 上一鏡",
+                btnNext: "下一鏡 ❯",
+                tabA: "方案 A",
+                tabB: "方案 B",
+                loadingTitle: "AI 導演構思中...",
+                wrapTitle: "IT'S A WRAP!",
+                wrapText: "恭喜殺青！<br>所有鏡頭已拍攝完成",
+                btnDownload: "下載全部影片",
+                btnHome: "回到首頁",
+                iosTitle: "📲 影片下載完成",
+                iosText: "<b>如何儲存到相簿：</b><br><br>1️⃣ 打開 Safari 右上角「下載」按鈕（向下箭頭圖示）<br><br>2️⃣ 看到影片列表，逐一點擊每個影片<br><br>3️⃣ 影片會開啟播放，點擊左下角「分享」按鈕<br><br>4️⃣ 選擇「儲存影片」或「儲存到相簿」<br><br>5️⃣ 重複步驟 2-4 完成所有影片",
+                btnOk: "知道了",
+                limitTitle: "今日額度已用完",
+                limitText: "今天的 5 次免費生成已用完。<br><br>明天再來繼續創作！",
+                usageBadge: "今日剩餘：{n} 次",
+                usageWarning: "⚠️ 今日剩餘：{n} 次",
+                alertEmpty: "請輸入腳本內容",
+                alertTopic: "請輸入主題",
+                alertError: "生成失敗：",
+                promptLang: "Traditional Chinese (Taiwan)",
+                vocShot: "特寫, 中景, 廣角, 微距",
+                vocMove: "固定, 平移, 推進, 拉遠, 跟隨, 環繞"
+            },
+            en: {
+                topicPlaceholder: "Enter topic (e.g., Making Coffee)",
+                scriptPlaceholder: "Paste your script here...\nOne shot per line:\nClose-up of cup\nMedium shot of latte art\nWide shot of cafe",
+                formatShort: "📱 Short Video (Reels)",
+                formatVlog: "📹 YouTube Vlog",
+                formatCinematic: "🎬 Cinematic B-Roll",
+                tabGenerate: "🤖 AI Generate",
+                tabImport: "📄 Import Script",
+                btnGenerate: "Generate",
+                btnParse: "Parse & Start",
+                hintImport: "💡 One shot per line, auto-analyzed",
+                btnBack: "❮ Edit Topic",
+                btnRegen: "🔄 Regenerate",
+                btnStart: "✓ Confirm & Start Filming",
+                btnPrev: "❮ Previous",
+                btnNext: "Next ❯",
+                tabA: "Plan A",
+                tabB: "Plan B",
+                loadingTitle: "AI Director Thinking...",
+                wrapTitle: "IT'S A WRAP!",
+                wrapText: "Great job!<br>All shots completed.",
+                btnDownload: "Download All Videos",
+                btnHome: "Home",
+                iosTitle: "📲 Download Complete",
+                iosText: "<b>How to save to Photos:</b><br><br>1️⃣ Tap Safari's download button (arrow down icon) in top-right<br><br>2️⃣ See video list, tap each video<br><br>3️⃣ Video plays, tap share button (bottom-left)<br><br>4️⃣ Select 'Save Video' or 'Save to Photos'<br><br>5️⃣ Repeat steps 2-4 for all videos",
+                btnOk: "Got it",
+                limitTitle: "Daily Limit Reached",
+                limitText: "You've used all 5 free generations today.<br><br>Come back tomorrow!",
+                usageBadge: "Remaining today: {n}",
+                usageWarning: "⚠️ Remaining: {n}",
+                alertEmpty: "Please enter script content",
+                alertTopic: "Please enter a topic",
+                alertError: "Generation failed: ",
+                promptLang: "English",
+                vocShot: "Close-up, Medium Shot, Wide Shot, Macro",
+                vocMove: "Static, Pan, Push In, Pull Out, Follow, Orbit"
+            }
+        };
+
+        // Usage Limit Functions
+        function checkUsageLimit() {
+            // 開發者模式：無限額度
+            if (devMode) {
+                return { allowed: true, remaining: 999, devMode: true };
+            }
+            
+            const today = new Date().toDateString();
+            const key = 'usage_' + today;
+            let count = parseInt(localStorage.getItem(key) || '0');
+            return { allowed: count < MAX_DAILY_USES, remaining: MAX_DAILY_USES - count };
+        }
+
+        function incrementUsage() {
+            // 開發者模式：不計數
+            if (devMode) return;
+            
+            const today = new Date().toDateString();
+            const key = 'usage_' + today;
+            let count = parseInt(localStorage.getItem(key) || '0');
+            localStorage.setItem(key, (count + 1).toString());
+            updateUsageBadge();
+        }
+
+        function updateUsageBadge() {
+            const check = checkUsageLimit();
+            const t = T[currentLang];
+            const display = document.getElementById('quota-display');
+            
+            // 開發者模式顯示
+            if (check.devMode) {
+                display.innerHTML = '🔓 Developer Mode (Unlimited)';
+                display.style.color = '#30D158';
+                return;
+            }
+            
+            const text = (check.remaining <= 2) ? t.usageWarning : t.usageBadge;
+            display.innerHTML = text.replace('{n}', check.remaining);
+            display.style.color = '';
+        }
+
+        // Language Functions
+        function detectLanguage() {
+            const saved = localStorage.getItem('appLang');
+            if (saved) return saved;
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.startsWith('zh') ? 'zh' : 'en';
+        }
+
+        function switchLanguage(lang) {
+            console.log('Switching to:', lang);  // Debug
+            currentLang = lang;
+            localStorage.setItem('appLang', lang);
+            
+            // 更新選單狀態
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                if (opt.getAttribute('data-lang') === lang) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            updateAllText();
+        }
+
+        function toggleLangMenu() {
+            document.getElementById('lang-menu').classList.toggle('show');
+        }
+
+        function selectLanguage(lang) {
+            switchLanguage(lang);
+            document.getElementById('lang-menu').classList.remove('show');
+        }
+
+        // 點擊外部關閉選單
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('lang-menu');
+            const controls = document.querySelector('.top-controls');
+            if (menu && controls && !controls.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+
+        function updateAllText() {
+            const t = T[currentLang];
+            
+            document.getElementById('topic').placeholder = t.topicPlaceholder;
+            document.getElementById('script-input').placeholder = t.scriptPlaceholder;
+            
+            const formatOptions = document.getElementById('format').options;
+            formatOptions[0].text = t.formatShort;
+            formatOptions[1].text = t.formatVlog;
+            formatOptions[2].text = t.formatCinematic;
+            
+            document.getElementById('tab-generate').innerHTML = t.tabGenerate;
+            document.getElementById('tab-import').innerHTML = t.tabImport;
+            document.getElementById('btn-generate').innerHTML = t.btnGenerate;
+            document.getElementById('btn-parse').innerHTML = t.btnParse;
+            document.getElementById('hint-import').innerHTML = t.hintImport;
+            document.getElementById('btn-back').innerHTML = t.btnBack;
+            document.getElementById('btn-regen').innerHTML = t.btnRegen;
+            document.getElementById('btn-start').innerHTML = t.btnStart;
+            document.getElementById('btn-prev').innerHTML = t.btnPrev;
+            document.getElementById('btn-next').innerHTML = t.btnNext;
+            
+            document.getElementById('tab-a').innerHTML = t.tabA;
+            document.getElementById('tab-b').innerHTML = t.tabB;
+            
+            document.getElementById('loading-title').innerHTML = t.loadingTitle;
+            document.getElementById('wrap-title').innerHTML = t.wrapTitle;
+            document.getElementById('wrap-text').innerHTML = t.wrapText;
+            document.getElementById('btn-download').innerHTML = t.btnDownload;
+            document.getElementById('btn-home').innerHTML = t.btnHome;
+            document.getElementById('ios-title').innerHTML = t.iosTitle;
+            document.getElementById('ios-text').innerHTML = t.iosText;
+            document.getElementById('btn-ios-ok').innerHTML = t.btnOk;
+            document.getElementById('limit-title').innerHTML = t.limitTitle;
+            document.getElementById('limit-text').innerHTML = t.limitText;
+            document.getElementById('btn-limit-ok').innerHTML = t.btnOk;
+            
+            updateUsageBadge();
+        }
+
+        // Mode Switch
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById('tab-' + mode).classList.add('active');
+            document.getElementById('mode-generate').style.display = mode === 'generate' ? 'block' : 'none';
+            document.getElementById('mode-import').style.display = mode === 'import' ? 'block' : 'none';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Import Script
+        function parseImportedScript() {
+            const t = T[currentLang];
+            const input = document.getElementById('script-input').value.trim();
+            if (!input) return alert(t.alertEmpty);
+            
+            const lines = input.split('\n').filter(l => l.trim().length > 0);
+            dataA = lines.map((line, idx) => ({
+                shot_size: currentLang === 'zh' ? '鏡頭' : 'Shot',
+                movement: currentLang === 'zh' ? '固定' : 'Static',
+                title: currentLang === 'zh' ? `鏡頭 ${idx + 1}` : `Shot ${idx + 1}`,
+                visual: line,
+                img_prompt: "cinematic filmmaking shot"
+            }));
+            dataB = [];
+            
+            renderList('list-a', dataA);
+            document.getElementById('page-setup').style.display = 'none';
+            document.getElementById('page-preview').style.display = 'flex';
+            document.getElementById('tab-b').style.display = 'none';
+            switchTab('A');
+        }
+
+        // Gemini API
+        async function fetchGemini(prompt) {
+            const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
+            
+            for (let model of models) {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!res.ok) throw new Error(res.statusText);
+                    return await res.json();
+                } catch (e) {
+                    console.warn(`${model} failed:`, e);
+                }
+            }
+            throw new Error("All models failed");
+        }
 
         async function generateScripts() {
-            const topic = document.getElementById('topic').value;
+            const t = T[currentLang];
+            const topic = document.getElementById('topic').value.trim();
             const format = document.getElementById('format').value;
-            if(!topic) return alert("請輸入主題");
-
+            
+            if (!topic) return alert(t.alertTopic);
+            
+            const check = checkUsageLimit();
+            if (!check.allowed) {
+                document.getElementById('limit-modal').style.display = 'flex';
+                return;
+            }
+            
+            incrementUsage();
             document.getElementById('overlay-loading').style.display = 'flex';
             
-            let prompt = `Role: DoP. Task: 2 Shotlists for "${topic}". Format: ${format}. 
-            Lang: Traditional Chinese. NO Pinyin.
-            STRICT: shot_size & movement MUST be Chinese.
-            Output JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
+            const shotCount = format === "Shorts" ? "6 to 8" : format === "Vlog" ? "at least 15" : "10 to 12";
+            const style = format === "Shorts" ? "Fast-paced" : format === "Vlog" ? "Storytelling" : "Cinematic";
+            
+            const prompt = `Role: Professional DoP. Task: Create 2 shot lists for "${topic}". Format: ${format} (${style}).
+Shot Count: STRICTLY ${shotCount} shots.
+Target Language: ${t.promptLang}.
+VOCABULARY (use these terms ONLY):
+- Movement: ${t.vocMove}
+- Shot Size: ${t.vocShot}
+Output STRICT JSON: { "planA": [{ "title":"", "visual":"", "shot_size":"", "movement":"", "img_prompt":"" }], "planB": [...] }`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
-                    method: "POST", headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-                });
-                const json = await res.json();
+                const json = await fetchGemini(prompt);
                 const txt = json.candidates[0].content.parts[0].text.replace(/```json|```/g, "").trim();
                 const parsed = JSON.parse(txt);
-                dataA = parsed.planA; dataB = parsed.planB;
                 
-                renderList('list-a', dataA); renderList('list-b', dataB);
+                dataA = parsed.planA;
+                dataB = parsed.planB;
+                
+                renderList('list-a', dataA);
+                renderList('list-b', dataB);
+                
                 document.getElementById('overlay-loading').style.display = 'none';
                 document.getElementById('page-setup').style.display = 'none';
                 document.getElementById('page-preview').style.display = 'flex';
+                document.getElementById('tab-b').style.display = 'block';
                 switchTab('A');
-            } catch(e) { alert("生成失敗"); document.getElementById('overlay-loading').style.display = 'none'; }
+            } catch (e) {
+                alert(t.alertError + e.message);
+                document.getElementById('overlay-loading').style.display = 'none';
+            }
         }
 
         function renderList(id, list) {
-            document.getElementById(id).innerHTML = list.map((s,i)=>`
+            document.getElementById(id).innerHTML = list.map((s, i) => `
                 <div class="script-item">
                     <div class="tags">
-                        <span class="tag tag-shot">${s.shot_size||'鏡頭'}</span>
-                        <span class="tag tag-move">${s.movement||'固定'}</span>
+                        <span class="tag tag-shot">${s.shot_size || 'Shot'}</span>
+                        <span class="tag tag-move">${s.movement || 'Static'}</span>
                     </div>
-                    <div class="s-title">${i+1}. ${s.title}</div>
+                    <div class="s-title">${i + 1}. ${s.title}</div>
                     <div class="s-desc">${s.visual}</div>
-                </div>`).join('');
+                </div>
+            `).join('');
         }
 
-        function switchTab(t) { 
-            currentList = t==='A'?dataA:dataB; 
-            document.getElementById('list-a').style.display = t==='A'?'block':'none';
-            document.getElementById('list-b').style.display = t==='B'?'block':'none';
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-            document.getElementById('tab-'+t.toLowerCase()).classList.add('active');
+        function switchTab(tab) {
+            currentList = tab === 'A' ? dataA : dataB;
+            document.getElementById('list-a').style.display = tab === 'A' ? 'block' : 'none';
+            document.getElementById('list-b').style.display = tab === 'B' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab.toLowerCase()).classList.add('active');
         }
-        function goBack() { document.getElementById('page-preview').style.display='none'; document.getElementById('page-setup').style.display='flex'; }
 
+        function goBack() {
+            document.getElementById('page-preview').style.display = 'none';
+            document.getElementById('page-setup').style.display = 'flex';
+        }
+
+        // Camera & Recording
         async function confirmSelection() {
-            currentList = document.getElementById('list-a').style.display==='block' ? dataA : dataB;
+            currentList = document.getElementById('list-a').style.display === 'block' ? dataA : dataB;
+            allVideos = [];
+            
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }
+                });
                 document.getElementById('camera-feed').srcObject = stream;
                 document.getElementById('camera-feed').style.display = 'block';
                 setupRecorder(stream);
-            } catch(e) {}
+            } catch (e) {
+                console.error("Camera error:", e);
+            }
+            
             document.getElementById('page-preview').style.display = 'none';
             document.getElementById('ui-layer').style.background = 'transparent';
             document.getElementById('page-ar').style.display = 'block';
-            shotIdx = 0; updateAR();
+            shotIdx = 0;
+            speak("Standby");
+            updateAR();
         }
 
         function setupRecorder(stream) {
-            let options = { mimeType: 'video/webm;codecs=vp9' };
+            let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 5000000 };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
+            
             try {
                 mediaRecorder = new MediaRecorder(stream, options);
-                mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: "video/webm" });
                     recordedChunks = [];
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.style.display = "none"; a.href = url; a.download = `shot_${shotIdx}_${Date.now()}.webm`;
-                    document.body.appendChild(a); a.click();
+                    allVideos.push({
+                        blob: blob,
+                        shotNumber: shotIdx + 1,
+                        timestamp: Date.now()
+                    });
+                    console.log(`Shot ${shotIdx + 1} saved. Total: ${allVideos.length} videos`);
                 };
-            } catch(e) {}
+            } catch (e) {
+                console.error("Recorder setup error:", e);
+            }
         }
 
         function toggleRecord() {
-            if(!mediaRecorder) return;
+            if (!mediaRecorder) return;
+            
             const btn = document.getElementById('shutter-btn');
-            const timerUI = document.getElementById('rec-timer');
-            if(!isRecording) {
-                recordedChunks = []; mediaRecorder.start(); isRecording = true;
-                btn.classList.add('recording'); timerUI.style.display = 'flex';
-                document.getElementById('ar-card').style.opacity = '0.3';
-                let sec = 0; timerInt = setInterval(() => { sec++; document.getElementById('timer-text').innerText = `00:${sec.toString().padStart(2,'0')}`; }, 1000);
+            const timer = document.getElementById('rec-timer');
+            const card = document.getElementById('ar-card');
+            
+            if (!isRecording) {
+                recordedChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                btn.classList.add('recording');
+                timer.style.display = 'flex';
+                card.style.opacity = '0.3';
+                
+                speak(`Action. Shot ${shotIdx + 1}`);
+                
+                let sec = 0;
+                timerInt = setInterval(() => {
+                    sec++;
+                    document.getElementById('timer-text').innerText = `00:${sec.toString().padStart(2, '0')}`;
+                }, 1000);
             } else {
-                mediaRecorder.stop(); isRecording = false;
-                btn.classList.remove('recording'); timerUI.style.display = 'none';
-                document.getElementById('ar-card').style.opacity = '1';
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('recording');
+                timer.style.display = 'none';
+                card.style.opacity = '1';
                 clearInterval(timerInt);
+                document.getElementById('timer-text').innerText = "00:00";
+                
+                speak("Cut");
             }
         }
 
         function updateAR() {
-            if(shotIdx >= currentList.length) { alert("殺青！"); location.reload(); return; }
+            if (shotIdx >= currentList.length) {
+                document.getElementById('wrap-modal').style.display = 'flex';
+                speak("It's a wrap");
+                return;
+            }
+            
             const s = currentList[shotIdx];
-            document.getElementById('ar-idx').innerText = `${shotIdx+1}/${currentList.length}`;
-            document.getElementById('ar-shot-type').innerText = s.shot_size || '鏡頭';
-            document.getElementById('ar-move').innerText = s.movement || '固定';
+            document.getElementById('ar-idx').innerText = `${shotIdx + 1}/${currentList.length}`;
+            document.getElementById('ar-shot-type').innerText = s.shot_size || 'Shot';
+            document.getElementById('ar-move').innerText = s.movement || 'Static';
             document.getElementById('ar-title').innerText = s.title;
             document.getElementById('ar-desc').innerText = s.visual;
-            document.getElementById('ar-thumb').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt)}?width=100&height=100&nologo=true`;
-            
-            // 更新按鈕狀態
+            document.getElementById('ar-thumb').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(s.img_prompt || 'cinematic shot')}?width=100&height=100&nologo=true`;
             document.getElementById('btn-prev').disabled = (shotIdx === 0);
         }
 
         function nextShot() {
-            if(isRecording) toggleRecord();
+            if (isRecording) toggleRecord();
             shotIdx++;
             updateAR();
+            if (shotIdx < currentList.length) {
+                speak(`Standby. Shot ${shotIdx + 1}`);
+            }
         }
 
         function prevShot() {
-            if(isRecording) toggleRecord();
-            if(shotIdx > 0) {
+            if (isRecording) toggleRecord();
+            if (shotIdx > 0) {
                 shotIdx--;
                 updateAR();
+                speak(`Standby. Shot ${shotIdx + 1}`);
             }
         }
+
+        function downloadAllVideos() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            allVideos.forEach((video, index) => {
+                setTimeout(() => {
+                    const url = URL.createObjectURL(video.blob);
+                    const a = document.createElement("a");
+                    a.style.display = "none";
+                    a.href = url;
+                    a.download = `shot_${video.shotNumber}_${video.timestamp}.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                }, index * 500);
+            });
+            
+            if (isIOS) {
+                setTimeout(() => {
+                    document.getElementById('ios-modal').style.display = 'flex';
+                }, allVideos.length * 500 + 1000);
+            }
+        }
+
+        // Speech - 固定使用英文男聲
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                
+                // 尋找 Google US English Male 語音
+                const voices = speechSynthesis.getVoices();
+                const maleVoice = voices.find(v => 
+                    v.name === 'Google US English Male' ||
+                    v.name === 'Google US English' ||
+                    (v.lang === 'en-US' && v.name.toLowerCase().includes('male'))
+                );
+                
+                if (maleVoice) {
+                    utterance.voice = maleVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Initialize on Load
+        window.addEventListener('load', () => {
+            currentLang = detectLanguage();
+            console.log('Initial language:', currentLang);  // Debug
+            switchLanguage(currentLang);
+            
+            // 開發者模式：長按標題 3 秒
+            let pressTimer;
+            const title = document.querySelector('h1');
+            
+            title.addEventListener('mousedown', () => {
+                pressTimer = setTimeout(() => {
+                    devMode = !devMode;
+                    updateUsageBadge();
+                    
+                    if (devMode) {
+                        alert('🔓 開發者模式已啟動\nDeveloper Mode Activated\n\n無限額度測試\nUnlimited Testing');
+                        title.style.color = '#30D158';
+                    } else {
+                        alert('🔒 開發者模式已關閉\nDeveloper Mode Deactivated');
+                        title.style.color = '#FFFFFF';
+                    }
+                }, 3000);
+            });
+            
+            title.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            title.addEventListener('mouseleave', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            // 手機觸控支援
+            title.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    devMode = !devMode;
+                    updateUsageBadge();
+                    
+                    if (devMode) {
+                        alert('🔓 開發者模式已啟動\nDeveloper Mode Activated\n\n無限額度測試\nUnlimited Testing');
+                        title.style.color = '#30D158';
+                    } else {
+                        alert('🔒 開發者模式已關閉\nDeveloper Mode Deactivated');
+                        title.style.color = '#FFFFFF';
+                    }
+                }, 3000);
+            });
+            
+            title.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+        });
     </script>
 </body>
 </html>
